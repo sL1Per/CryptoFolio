@@ -1,8 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Coin } from '../../types'
 
 export function CoinImage({ coin, imageUrl, size = 32 }: { coin: Coin; imageUrl?: string; size?: number }) {
   const [failed, setFailed] = useState(false)
+  useEffect(() => {
+    setFailed(false)
+  }, [imageUrl])
   const style = { width: size, height: size }
 
   if (!imageUrl || failed) {

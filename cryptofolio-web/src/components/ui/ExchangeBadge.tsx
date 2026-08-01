@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Exchange } from '../../types'
 import { exchangeLogoUrl } from '../../types'
 
 export function ExchangeBadge({ exchange, size = 16 }: { exchange: Exchange; size?: number }) {
   const [failed, setFailed] = useState(false)
+  useEffect(() => {
+    setFailed(false)
+  }, [exchange.domain])
   const style = { width: size, height: size }
 
   if (!exchange.domain || failed) {

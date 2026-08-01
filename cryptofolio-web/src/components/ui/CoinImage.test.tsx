@@ -18,4 +18,11 @@ describe('CoinImage', () => {
     render(<CoinImage coin={btc} />)
     expect(screen.getByText('B')).toBeInTheDocument()
   })
+  it('clears the fallback when imageUrl prop changes', () => {
+    const { rerender } = render(<CoinImage coin={btc} imageUrl="https://bad/url.png" />)
+    fireEvent.error(screen.getByRole('img'))
+    expect(screen.getByText('B')).toBeInTheDocument()
+    rerender(<CoinImage coin={btc} imageUrl="https://good/url.png" />)
+    expect(screen.getByRole('img')).toHaveAttribute('src', 'https://good/url.png')
+  })
 })
