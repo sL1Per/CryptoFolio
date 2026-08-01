@@ -17,7 +17,8 @@ export const onRequestGet: PagesFunction = async (context) => {
     },
     {
       cache: caches.default,
-      fetchUpstream: (u) => fetch(u),
+      fetchUpstream: (u) =>
+        fetch(u, { headers: { 'User-Agent': 'CryptoFolio/1.0 (+https://cryptofolio.app)', Accept: 'application/json' } }),
       now: () => Date.now(),
       waitUntil: (p) => context.waitUntil(p),
     },
