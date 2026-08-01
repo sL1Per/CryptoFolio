@@ -44,6 +44,10 @@ describe('cacheProxy', () => {
     expect(await res.json()).toEqual({ bitcoin: { usd: 1 } })
     expect(store.v).toBeDefined() // cached
     expect(res.headers.get('x-cache-status')).toBe('miss')
+    // Browser must never cache this response — only the edge copy gets the long max-age.
+    expect(res.headers.get('Cache-Control')).toBe('no-store')
+    expect(store.v!.headers.get('Cache-Control')).toContain('max-age=')
+    expect(store.v!.headers.get('x-cached-at')).toBeTruthy()
   })
 
   it('fresh hit: does not call upstream', async () => {
@@ -54,6 +58,8 @@ describe('cacheProxy', () => {
     expect(fetchUpstream).not.toHaveBeenCalled()
     expect(res.headers.get('x-cache-status')).toBe('fresh')
     expect(await res.json()).toEqual({ ok: 1 })
+    // Even a fresh cache hit must not be cached by the browser's own HTTP cache.
+    expect(res.headers.get('Cache-Control')).toBe('no-store')
   })
 
   it('stale hit: refetches and updates', async () => {
