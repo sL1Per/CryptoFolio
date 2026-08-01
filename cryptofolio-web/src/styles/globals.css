@@ -1,3 +1,58 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --app-bg: #f0f2f5;
+  --sheet-bg: #f7f8fa;
+  --card-bg: rgba(255, 255, 255, 0.85);
+  --card-bg-hover: #e8eaed;
+  --row-bg: #ffffff;
+  --border: rgba(0, 0, 0, 0.07);
+  --border-hover: rgba(255, 200, 80, 0.5);
+  --subtle-border: rgba(0, 0, 0, 0.05);
+  --text-primary: #111111;
+  --text-secondary: #555555;
+  --text-tertiary: #999999;
+  --text-faint: #cccccc;
+  --field-bg: #ffffff;
+  --field-border: rgba(0, 0, 0, 0.12);
+
+  --gold: #ffc850;
+  --gold-dim: rgba(255, 200, 80, 0.08);
+  --gold-border: rgba(255, 200, 80, 0.15);
+  --gold-card-bg: rgba(255, 200, 80, 0.05);
+  --green: #00d97e;
+  --red: #ff4d6d;
+  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+.dark {
+  --app-bg: #080b10;
+  --sheet-bg: #0a0d12;
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --card-bg-hover: rgba(255, 255, 255, 0.06);
+  --row-bg: rgba(255, 255, 255, 0.03);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 200, 80, 0.15);
+  --subtle-border: rgba(255, 255, 255, 0.04);
+  --text-primary: #e0e0e0;
+  --text-secondary: #888888;
+  --text-tertiary: #555555;
+  --text-faint: #333333;
+  --field-bg: rgba(255, 255, 255, 0.05);
+  --field-border: rgba(255, 255, 255, 0.1);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--app-bg);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
