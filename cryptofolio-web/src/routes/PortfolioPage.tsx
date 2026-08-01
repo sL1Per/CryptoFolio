@@ -8,12 +8,14 @@ import { FlatHoldingsGrid } from '../components/portfolio/FlatHoldingsGrid'
 import { ExchangeGroupedGrid } from '../components/portfolio/ExchangeGroupedGrid'
 import { AddHoldingModal } from '../components/modals/AddHoldingModal'
 import { SettingsModal } from '../components/modals/SettingsModal'
+import type { Holding } from '../types'
 
 export function PortfolioPage() {
   const holdings = usePortfolioStore((s) => s.holdings)
   const groupMode = usePortfolioStore((s) => s.groupMode)
   const [addOpen, setAddOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [editing, setEditing] = useState<Holding | null>(null)
 
   return (
     <AppShell onAdd={() => setAddOpen(true)} onSettings={() => setSettingsOpen(true)}>
@@ -27,12 +29,13 @@ export function PortfolioPage() {
         ) : groupMode === 'token' ? (
           <TokenGroupedGrid />
         ) : groupMode === 'exchange' ? (
-          <ExchangeGroupedGrid />
+          <ExchangeGroupedGrid onEditHolding={setEditing} />
         ) : (
-          <FlatHoldingsGrid />
+          <FlatHoldingsGrid onEditHolding={setEditing} />
         )}
       </div>
-      <AddHoldingModal open={addOpen} onClose={() => setAddOpen(false)} />
+      {addOpen && <AddHoldingModal open onClose={() => setAddOpen(false)} />}
+      {editing && <AddHoldingModal open editing={editing} onClose={() => setEditing(null)} />}
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </AppShell>
   )

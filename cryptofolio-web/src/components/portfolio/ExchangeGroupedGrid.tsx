@@ -5,8 +5,9 @@ import { HoldingCard } from './HoldingCard'
 import { ExchangeBadge } from '../ui/ExchangeBadge'
 import { SectionHeader } from '../ui/SectionHeader'
 import { formatCurrency } from '../../lib/formatters'
+import type { Holding } from '../../types'
 
-export function ExchangeGroupedGrid() {
+export function ExchangeGroupedGrid({ onEditHolding }: { onEditHolding: (h: Holding) => void }) {
   const snap = useSnapshot()
   const coinImages = usePortfolioStore((s) => s.coinImages)
   return (
@@ -20,7 +21,7 @@ export function ExchangeGroupedGrid() {
           </SectionHeader>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {group.holdings.map((h) => (
-              <HoldingCard key={h.id} holding={h} snap={snap} imageUrl={coinImages[h.coin.id]} />
+              <HoldingCard key={h.id} holding={h} snap={snap} imageUrl={coinImages[h.coin.id]} onClick={() => onEditHolding(h)} />
             ))}
           </div>
         </div>

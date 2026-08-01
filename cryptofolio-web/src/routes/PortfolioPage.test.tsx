@@ -19,4 +19,22 @@ describe('PortfolioPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /add/i }))
     expect(screen.getByRole('dialog', { name: /add holding/i })).toBeInTheDocument()
   })
+
+  it('opens edit modal from a holding card in All view and can delete', async () => {
+    const btc = { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin' }
+    usePortfolioStore.setState({
+      holdings: [{ id: 'h1', coin: btc, amount: 2, exchangeId: 'coinbase' }],
+      groupMode: 'all',
+      prices: {},
+      coinImages: {},
+      sortMode: 'value',
+      currency: 'usd',
+    })
+    render(<PortfolioPage />)
+    // tap the holding card (button labelled with the coin symbol/amount)
+    await userEvent.click(screen.getByRole('button', { name: /BTC/i }))
+    expect(screen.getByRole('dialog', { name: /edit holding/i })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /delete/i }))
+    expect(usePortfolioStore.getState().holdings).toHaveLength(0)
+  })
 })

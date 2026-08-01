@@ -21,11 +21,15 @@ export function AddHoldingModal({
   const fieldClass = 'w-full rounded-lg border border-field-border bg-field-bg px-3 py-2 text-sm text-text-primary font-mono'
 
   function save() {
-    const coin = POPULAR_COINS.find((c) => c.id === coinId)!
     const amt = parseFloat(amount)
     if (!Number.isFinite(amt) || amt <= 0) return
-    if (editing) updateHolding(editing.id, amt, exchangeId)
-    else addHolding(coin, amt, exchangeId)
+    if (editing) {
+      updateHolding(editing.id, amt, exchangeId)
+    } else {
+      const coin = POPULAR_COINS.find((c) => c.id === coinId)
+      if (!coin) return
+      addHolding(coin, amt, exchangeId)
+    }
     onClose()
   }
 
