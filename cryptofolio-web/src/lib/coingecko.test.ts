@@ -9,7 +9,7 @@ function mockFetch(status: number, body: unknown) {
 
 describe('coingecko client', () => {
   it('fetchPrices returns parsed map and requests sorted ids', async () => {
-    const f = vi.fn(async () => new Response(JSON.stringify({ bitcoin: { usd: 1, eur: 1, usd_24h_change: 0, eur_24h_change: 0 } }), { status: 200 }))
+    const f = vi.fn(async (_url: string) => new Response(JSON.stringify({ bitcoin: { usd: 1, eur: 1, usd_24h_change: 0, eur_24h_change: 0 } }), { status: 200 }))
     vi.stubGlobal('fetch', f)
     const res = await fetchPrices(['ethereum', 'bitcoin'])
     expect(res.bitcoin.usd).toBe(1)
