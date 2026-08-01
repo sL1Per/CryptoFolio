@@ -5,6 +5,7 @@ import { formatCurrency, formatAmount } from '../../lib/formatters'
 import { CoinImage } from '../ui/CoinImage'
 import { ExchangeBadge } from '../ui/ExchangeBadge'
 import { ChangeBadge } from '../ui/ChangeBadge'
+import { usePortfolioStore } from '../../store/portfolioStore'
 
 export function HoldingCard({
   holding,
@@ -17,8 +18,10 @@ export function HoldingCard({
   imageUrl?: string
   onClick?: () => void
 }) {
-  const price = priceFor(snap, holding.coin.id) ?? 0
-  const value = price * holding.amount
+  const isLoading = usePortfolioStore((s) => s.isLoading)
+  const rawPrice = priceFor(snap, holding.coin.id)
+  const showSkeleton = isLoading && rawPrice === undefined
+  const value = (rawPrice ?? 0) * holding.amount
   const exchange = findExchange(holding.exchangeId)
   return (
     <button
@@ -39,7 +42,11 @@ export function HoldingCard({
       </div>
       <div className="flex items-baseline justify-between">
         <span className="text-xs text-text-secondary">{formatAmount(holding.amount)} {holding.coin.symbol}</span>
-        <span className="text-sm font-semibold text-text-primary">{formatCurrency(value, snap.currency)}</span>
+        {showSkeleton ? (
+          <span className="inline-block h-4 w-16 animate-pulse rounded bg-card-bg-hover" />
+        ) : (
+          <span className="text-sm font-semibold text-text-primary">{formatCurrency(value, snap.currency)}</span>
+        )}
       </div>
     </button>
   )

@@ -3,6 +3,7 @@ import { priceFor, dailyChangeFor, type PortfolioSnapshot } from '../../store/se
 import { formatCurrency, formatAmount } from '../../lib/formatters'
 import { CoinImage } from '../ui/CoinImage'
 import { ChangeBadge } from '../ui/ChangeBadge'
+import { usePortfolioStore } from '../../store/portfolioStore'
 
 export function TokenCard({
   agg,
@@ -15,8 +16,10 @@ export function TokenCard({
   imageUrl?: string
   onClick: () => void
 }) {
-  const price = priceFor(snap, agg.coin.id) ?? 0
-  const value = price * agg.totalAmount
+  const isLoading = usePortfolioStore((s) => s.isLoading)
+  const rawPrice = priceFor(snap, agg.coin.id)
+  const showSkeleton = isLoading && rawPrice === undefined
+  const value = (rawPrice ?? 0) * agg.totalAmount
   return (
     <button
       onClick={onClick}
@@ -34,7 +37,11 @@ export function TokenCard({
       </div>
       <div className="flex items-baseline justify-between">
         <span className="text-xs text-text-secondary">{formatAmount(agg.totalAmount)} {agg.coin.symbol}</span>
-        <span className="text-sm font-semibold text-text-primary">{formatCurrency(value, snap.currency)}</span>
+        {showSkeleton ? (
+          <span className="inline-block h-4 w-16 animate-pulse rounded bg-card-bg-hover" />
+        ) : (
+          <span className="text-sm font-semibold text-text-primary">{formatCurrency(value, snap.currency)}</span>
+        )}
       </div>
     </button>
   )
