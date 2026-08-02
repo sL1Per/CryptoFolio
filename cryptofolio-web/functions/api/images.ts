@@ -13,7 +13,12 @@ export const onRequestGet: PagesFunction = async (context) => {
       upstreamUrl: `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${param}&per_page=250&sparkline=false`,
       freshTtlMs: 86_400_000,
       retentionSecs: 604800,
-      transform: (j) => Object.fromEntries((j as Market[]).map((m) => [m.id, m.image])),
+      transform: (j) =>
+        Object.fromEntries(
+          (Array.isArray(j) ? (j as Market[]) : [])
+            .filter((m) => m && typeof m.id === 'string' && typeof m.image === 'string')
+            .map((m) => [m.id, m.image]),
+        ),
     },
     {
       cache: caches.default,
