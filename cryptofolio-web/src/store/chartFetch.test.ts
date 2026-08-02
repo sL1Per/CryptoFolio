@@ -85,4 +85,31 @@ describe('fetchHistoricalData', () => {
     expect(spy).not.toHaveBeenCalled()
     expect(usePortfolioStore.getState().historicalData).toEqual([{ date: 1000, value: 9 }])
   })
+
+  it('a superseded invocation (currency switched mid-flight) does not overwrite newer state', async () => {
+    usePortfolioStore.getState().addHolding(BTC, 1, 'coinbase')
+    usePortfolioStore.getState().addHolding(ETH, 1, 'coinbase')
+    // First invocation returns stale-ish points but will be superseded mid-sleep
+    // (between the first and second coin's fetch).
+    const spy = vi.spyOn(coingecko, 'fetchCoinHistory')
+      .mockResolvedValue({ ok: true, points: [{ ts: 1000, price: 100 }] })
+    const p1 = usePortfolioStore.getState().fetchHistoricalData()
+    await vi.advanceTimersByTimeAsync(0) // first coin of invocation 1 fetched; now between-coin sleep pending
+    expect(spy).toHaveBeenCalledTimes(1)
+
+    // Supersede: start a second invocation (as a currency/range switch effect would),
+    // now resolving with different prices.
+    spy.mockResolvedValue({ ok: true, points: [{ ts: 1000, price: 999 }] })
+    const p2 = usePortfolioStore.getState().fetchHistoricalData(true)
+    await vi.runAllTimersAsync()
+    await Promise.all([p1, p2])
+
+    // Final state must reflect invocation 2 (price 999 per coin), not a late write
+    // from invocation 1 (price 100) landing after invocation 2 has already finished.
+    const data = usePortfolioStore.getState().historicalData
+    expect(data.length).toBeGreaterThan(0)
+    // 2 holdings (BTC + ETH), each contributing 999 at ts=1000 -> portfolio value 1998.
+    expect(data.every((pt) => pt.value === 999 * 2)).toBe(true)
+    expect(usePortfolioStore.getState().isLoadingChart).toBe(false)
+  })
 })

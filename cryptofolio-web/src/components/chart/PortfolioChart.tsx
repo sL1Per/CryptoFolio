@@ -26,6 +26,8 @@ export function PortfolioChart({
           tickFormatter={(ms: number) => xTickLabel(ms, range)}
           tick={{ fontSize: 10, fontFamily: 'var(--font-mono)', fill: 'var(--text-tertiary)' }}
           stroke="var(--subtle-border)"
+          minTickGap={40}
+          interval="preserveStartEnd"
         />
         <YAxis
           orientation="left" domain={['auto', 'auto']} width={56}

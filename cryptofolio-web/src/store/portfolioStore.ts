@@ -13,6 +13,11 @@ export const FETCH_SPACING_MS = 1500
 export const RATE_LIMIT_WAIT_MS = 15000
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 
+// Monotonic counter used to detect when a fetchHistoricalData invocation has been
+// superseded by a newer one (currency/range switch, manual refresh) while it was
+// still mid-flight (sleeping between coins, or waiting out a rate limit).
+let chartFetchGeneration = 0
+
 interface PortfolioState {
   holdings: Holding[]
   groupMode: GroupMode
@@ -117,6 +122,11 @@ export const usePortfolioStore = create<PortfolioState>()(
         const { holdings, currency, selectedTimeRange: range } = get()
         if (holdings.length === 0) { set({ historicalData: [] }); return }
 
+        // Claim this invocation's generation. If a newer invocation starts before
+        // this one finishes, `superseded()` flips true and every write below is skipped.
+        const myGeneration = ++chartFetchGeneration
+        const superseded = () => myGeneration !== chartFetchGeneration
+
         const cur = currency
         const uniqueIds = [...new Set(holdings.map((h) => h.coin.id))]
         const amountByCoin: Record<string, number> = {}
@@ -170,6 +180,7 @@ export const usePortfolioStore = create<PortfolioState>()(
 
         const accumulated: Record<string, { ts: number; price: number }[]> = { ...cachedHistories }
         const writeEntry = (id: string, points: { ts: number; price: number }[]) => {
+          if (superseded()) return
           const entry: ChartCacheEntry = { coinId: id, currency: cur, range, fetchedAt: now(), points }
           cache = { ...cache, [keyOf(id)]: entry }
           set({ chartCache: cache })
@@ -186,14 +197,18 @@ export const usePortfolioStore = create<PortfolioState>()(
           const displayId = id.toUpperCase().replace('-2', '').replace('-NETWORK', '')
           set({ chartLoadingStatus: `Updating ${displayId}… (${i + 1}/${staleIds.length})` })
           if (i > 0) await sleep(FETCH_SPACING_MS)
+          if (superseded()) return
 
           const result = await fetchCoinHistory(id, range, cur)
+          if (superseded()) return
           if (result.ok) {
             writeEntry(id, result.points)
           } else if (result.rateLimited) {
             set({ chartLoadingStatus: 'Rate limited — waiting 15s to retry…' })
             await sleep(RATE_LIMIT_WAIT_MS)
+            if (superseded()) return
             const retry = await fetchCoinHistory(id, range, cur)
+            if (superseded()) return
             if (retry.ok) {
               writeEntry(id, retry.points)
             } else {
@@ -206,6 +221,7 @@ export const usePortfolioStore = create<PortfolioState>()(
           }
         }
 
+        if (superseded()) return
         set({ isLoadingChart: false, chartLoadingStatus: '', chartIsStale: stalenessOf(cache) })
       },
     }),
