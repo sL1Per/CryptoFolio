@@ -1,8 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { PortfolioPage } from './PortfolioPage'
 import { usePortfolioStore } from '../store/portfolioStore'
+// Mock the client so the mount effect does no real network I/O.
+vi.mock('../lib/coingecko', () => ({
+  RateLimitedError: class RateLimitedError extends Error {},
+  fetchPrices: vi.fn().mockResolvedValue({}),
+  fetchImages: vi.fn().mockResolvedValue({}),
+}))
+import * as api from '../lib/coingecko'
 
 describe('PortfolioPage', () => {
   beforeEach(() => {
@@ -36,5 +43,24 @@ describe('PortfolioPage', () => {
     expect(screen.getByRole('dialog', { name: /edit holding/i })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /delete/i }))
     expect(usePortfolioStore.getState().holdings).toHaveLength(0)
+  })
+})
+
+describe('PortfolioPage live-data wiring', () => {
+  it('fetches prices on mount when holdings exist', async () => {
+    const btc = { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin' }
+    usePortfolioStore.setState({ holdings: [{ id: 'h', coin: btc, amount: 1, exchangeId: 'coinbase' }], groupMode: 'token', prices: {}, coinImages: {} })
+    render(<PortfolioPage />)
+    await waitFor(() => expect(api.fetchPrices).toHaveBeenCalled())
+  })
+
+  it('refresh button triggers a fetch', async () => {
+    const btc = { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin' }
+    usePortfolioStore.setState({ holdings: [{ id: 'h', coin: btc, amount: 1, exchangeId: 'coinbase' }], groupMode: 'token', prices: {}, coinImages: {} })
+    render(<PortfolioPage />)
+    await waitFor(() => expect(api.fetchPrices).toHaveBeenCalled())
+    ;(api.fetchPrices as unknown as { mockClear: () => void }).mockClear()
+    await userEvent.click(screen.getByRole('button', { name: /refresh/i }))
+    await waitFor(() => expect(api.fetchPrices).toHaveBeenCalled())
   })
 })
