@@ -11,12 +11,16 @@ Cloudflare Pages. See `../docs/superpowers/specs/2026-08-01-cryptofolio-web-migr
 
 ## Develop
 - `npm install`
-- `npm run dev` — Wrangler serves the SPA + /api Functions on one origin (prod parity)
-- `npm run dev:vite` — Vite only (UI work; /api calls 404)
+- `npm run dev` — full app + `/api` Functions on one origin with live prices; rebuilds on
+  save and live-reloads the browser (Vite build --watch + `wrangler pages dev`, port 8788)
+- `npm run dev:ui` — Vite only, fast HMR for pure UI work (`/api` calls 404 here)
 - `npm test` — Vitest
 - `npm run typecheck:functions` — type-check the Pages Functions (Workers types)
 - `npm run build` — app type-check + production build to `dist/`
-- `npx wrangler pages dev dist` — serve the built app + Functions locally
+- `npx wrangler pages dev` — serve the built `dist/` + Functions (uses `pages_build_output_dir`)
+
+> Note: Wrangler 4 deprecated the old `pages dev -- <command>` proxy form, so `npm run dev`
+> uses a build-watch + `wrangler pages dev` combo instead (same result: one origin, live data).
 
 ## Deploy (run yourself against your Cloudflare account)
 - `npx wrangler pages deploy dist`

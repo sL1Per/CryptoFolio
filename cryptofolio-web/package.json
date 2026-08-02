@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev:vite": "vite",
-    "dev": "wrangler pages dev -- npm run dev:vite",
+    "dev": "vite build && concurrently -k -n vite,cf -c cyan,magenta \"vite build --watch\" \"wrangler pages dev --live-reload\"",
+    "dev:ui": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
@@ -28,6 +28,7 @@
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.0.5",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^10.0.4",
     "jsdom": "^25.0.1",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
