@@ -39,4 +39,14 @@ describe('buildPortfolioDataPoints', () => {
       { date: 2000, value: 20 },
     ])
   })
+
+  it('skips a coin that has history but no held amount', () => {
+    const histories = { bitcoin: pts([1000, 10], [2000, 20]), ethereum: pts([1000, 5], [2000, 7]) }
+    // ethereum is present in coinHistories but has no (zero/absent) amount → must not contribute
+    const out = buildPortfolioDataPoints(histories, { bitcoin: 2, ethereum: 0 })
+    expect(out).toEqual([
+      { date: 1000, value: 20 },
+      { date: 2000, value: 40 },
+    ])
+  })
 })
