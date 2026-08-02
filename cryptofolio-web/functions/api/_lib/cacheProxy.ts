@@ -50,9 +50,13 @@ export async function cacheProxy(config: ProxyConfig, deps: ProxyDeps): Promise<
     if (deps.now() - at < config.freshTtlMs) return withCacheStatus(cached, 'fresh')
   }
 
+  let upstreamWas429 = false
   try {
     const upstream = await deps.fetchUpstream(config.upstreamUrl)
-    if (!upstream.ok) throw new Error(`upstream ${upstream.status}`)
+    if (!upstream.ok) {
+      upstreamWas429 = upstream.status === 429
+      throw new Error(`upstream ${upstream.status}`)
+    }
     const body = config.transform(await upstream.json())
     const edgeResp = jsonResponse(body, {
       'Cache-Control': `public, max-age=${config.retentionSecs}`,
@@ -65,6 +69,9 @@ export async function cacheProxy(config: ProxyConfig, deps: ProxyDeps): Promise<
     return jsonResponse(body, { 'Cache-Control': 'no-store', 'x-cache-status': 'miss' })
   } catch {
     if (cached) return withCacheStatus(cached, 'stale')
-    return jsonResponse({ error: 'rate_limited' }, { 'Cache-Control': 'no-store', 'x-cache-status': 'error' }, 429)
+    if (upstreamWas429) {
+      return jsonResponse({ error: 'rate_limited' }, { 'Cache-Control': 'no-store', 'x-cache-status': 'rate-limited' }, 429)
+    }
+    return jsonResponse({ error: 'upstream_error' }, { 'Cache-Control': 'no-store', 'x-cache-status': 'error' }, 502)
   }
 }
