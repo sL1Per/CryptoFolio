@@ -80,12 +80,30 @@ describe('cacheProxy', () => {
     expect(await res.json()).toEqual({ old: 1 })
   })
 
-  it('cold + upstream 429: returns 429 error json', async () => {
+  it('cold + upstream 500: returns 502 upstream_error json', async () => {
+    const { cache } = fakeCache()
+    const fetchUpstream = vi.fn(async () => new Response('', { status: 500 }))
+    const res = await cacheProxy(CFG, { cache, fetchUpstream, now: () => 1000 })
+    expect(res.status).toBe(502)
+    expect(await res.json()).toEqual({ error: 'upstream_error' })
+    expect(res.headers.get('x-cache-status')).toBe('error')
+  })
+
+  it('cold + network throw: returns 502 upstream_error json', async () => {
+    const { cache } = fakeCache()
+    const fetchUpstream = vi.fn(async () => { throw new Error('boom') })
+    const res = await cacheProxy(CFG, { cache, fetchUpstream, now: () => 1000 })
+    expect(res.status).toBe(502)
+    expect(await res.json()).toEqual({ error: 'upstream_error' })
+  })
+
+  it('cold + upstream 429: still returns 429 rate_limited json', async () => {
     const { cache } = fakeCache()
     const fetchUpstream = vi.fn(async () => new Response('', { status: 429 }))
     const res = await cacheProxy(CFG, { cache, fetchUpstream, now: () => 1000 })
     expect(res.status).toBe(429)
     expect(await res.json()).toEqual({ error: 'rate_limited' })
+    expect(res.headers.get('x-cache-status')).toBe('rate-limited')
   })
 
   it('applies transform (array → map)', async () => {

@@ -1,4 +1,5 @@
-import type { CoinPrice } from '../types'
+import type { CoinPrice, TimeRange, Currency, HistoryPoint } from '../types'
+import { TIME_RANGE_DAYS } from './constants'
 
 export class RateLimitedError extends Error {
   constructor() {
@@ -21,4 +22,25 @@ export function fetchPrices(ids: string[]): Promise<Record<string, CoinPrice>> {
 
 export function fetchImages(ids: string[]): Promise<Record<string, string>> {
   return getJson<Record<string, string>>('/api/images', ids)
+}
+
+export type HistoryResult =
+  | { ok: true; points: HistoryPoint[] }
+  | { ok: false; rateLimited: boolean }
+
+export async function fetchCoinHistory(
+  id: string,
+  range: TimeRange,
+  currency: Currency,
+): Promise<HistoryResult> {
+  try {
+    const res = await fetch(`/api/history/${id}?days=${TIME_RANGE_DAYS[range]}&vs=${currency}`)
+    if (res.status === 429) return { ok: false, rateLimited: true }
+    if (!res.ok) return { ok: false, rateLimited: false }
+    const json = (await res.json()) as { prices?: [number, number][] }
+    const points = (json.prices ?? []).map(([ts, price]) => ({ ts, price }))
+    return { ok: true, points }
+  } catch {
+    return { ok: false, rateLimited: false }
+  }
 }

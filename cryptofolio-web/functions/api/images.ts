@@ -2,6 +2,14 @@ import { cacheProxy, parseIds, jsonResponse } from './_lib/cacheProxy'
 
 interface Market { id: string; image: string }
 
+export function imagesTransform(j: unknown): Record<string, string> {
+  return Object.fromEntries(
+    (Array.isArray(j) ? (j as Market[]) : [])
+      .filter((m) => m && typeof m.id === 'string' && typeof m.image === 'string')
+      .map((m) => [m.id, m.image]),
+  )
+}
+
 export const onRequestGet: PagesFunction = async (context) => {
   const url = new URL(context.request.url)
   const ids = parseIds(url.searchParams.get('ids'))
@@ -13,7 +21,7 @@ export const onRequestGet: PagesFunction = async (context) => {
       upstreamUrl: `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${param}&per_page=250&sparkline=false`,
       freshTtlMs: 86_400_000,
       retentionSecs: 604800,
-      transform: (j) => Object.fromEntries((j as Market[]).map((m) => [m.id, m.image])),
+      transform: imagesTransform,
     },
     {
       cache: caches.default,

@@ -6,6 +6,7 @@ import { ControlBar } from '../components/portfolio/ControlBar'
 import { TokenGroupedGrid } from '../components/portfolio/TokenGroupedGrid'
 import { FlatHoldingsGrid } from '../components/portfolio/FlatHoldingsGrid'
 import { ExchangeGroupedGrid } from '../components/portfolio/ExchangeGroupedGrid'
+import { PortfolioHistorySection } from '../components/chart/PortfolioHistorySection'
 import { AddHoldingModal } from '../components/modals/AddHoldingModal'
 import { SettingsModal } from '../components/modals/SettingsModal'
 import { ErrorBanner } from '../components/ui/ErrorBanner'
@@ -43,6 +44,7 @@ export function PortfolioPage() {
         ) : (
           <FlatHoldingsGrid onEditHolding={setEditing} />
         )}
+        {holdings.length > 0 && <PortfolioHistorySection />}
       </div>
       {addOpen && <AddHoldingModal open onClose={() => setAddOpen(false)} />}
       {editing && <AddHoldingModal open editing={editing} onClose={() => setEditing(null)} />}

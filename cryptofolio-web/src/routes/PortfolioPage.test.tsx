@@ -8,6 +8,7 @@ vi.mock('../lib/coingecko', () => ({
   RateLimitedError: class RateLimitedError extends Error {},
   fetchPrices: vi.fn().mockResolvedValue({}),
   fetchImages: vi.fn().mockResolvedValue({}),
+  fetchCoinHistory: vi.fn().mockResolvedValue({ ok: true, points: [] }),
 }))
 import * as api from '../lib/coingecko'
 
@@ -60,7 +61,7 @@ describe('PortfolioPage live-data wiring', () => {
     render(<PortfolioPage />)
     await waitFor(() => expect(api.fetchPrices).toHaveBeenCalled())
     ;(api.fetchPrices as unknown as { mockClear: () => void }).mockClear()
-    await userEvent.click(screen.getByRole('button', { name: /refresh/i }))
+    await userEvent.click(screen.getByRole('button', { name: /refresh prices/i }))
     await waitFor(() => expect(api.fetchPrices).toHaveBeenCalled())
   })
 })

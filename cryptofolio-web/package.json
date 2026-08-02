@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite build && concurrently -k -n vite,cf -c cyan,magenta \"vite build --watch\" \"wrangler pages dev --live-reload\"",
     "dev:ui": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && tsc -p functions/tsconfig.json && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -17,6 +17,7 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router": "^8.3.0",
+    "recharts": "^3.10.1",
     "zustand": "^4.5.5"
   },
   "devDependencies": {
