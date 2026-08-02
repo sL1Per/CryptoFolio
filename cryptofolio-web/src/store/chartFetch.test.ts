@@ -89,20 +89,27 @@ describe('fetchHistoricalData', () => {
   it('a superseded invocation (currency switched mid-flight) does not overwrite newer state', async () => {
     usePortfolioStore.getState().addHolding(BTC, 1, 'coinbase')
     usePortfolioStore.getState().addHolding(ETH, 1, 'coinbase')
-    // First invocation returns stale-ish points but will be superseded mid-sleep
-    // (between the first and second coin's fetch).
+    // Invocation 1 (gen1) will fetch bitcoin, then hit its between-coin sleep(1500)
+    // and suspend there. Invocation 2 (gen2) supersedes it before that sleep fires.
     const spy = vi.spyOn(coingecko, 'fetchCoinHistory')
       .mockResolvedValue({ ok: true, points: [{ ts: 1000, price: 100 }] })
     const p1 = usePortfolioStore.getState().fetchHistoricalData()
-    await vi.advanceTimersByTimeAsync(0) // first coin of invocation 1 fetched; now between-coin sleep pending
+    await vi.advanceTimersByTimeAsync(0) // gen1 fetches bitcoin (call 1), now sleeping before ethereum
     expect(spy).toHaveBeenCalledTimes(1)
 
     // Supersede: start a second invocation (as a currency/range switch effect would),
-    // now resolving with different prices.
+    // now resolving with different prices so gen2's writes are distinguishable.
     spy.mockResolvedValue({ ok: true, points: [{ ts: 1000, price: 999 }] })
     const p2 = usePortfolioStore.getState().fetchHistoricalData(true)
     await vi.runAllTimersAsync()
     await Promise.all([p1, p2])
+
+    // Discriminating assertion: with the generation guard, gen1's between-coin sleep
+    // resolves to a superseded check that returns early, so gen1 NEVER fetches
+    // ethereum. Only 3 calls happen total: bitcoin (gen1), bitcoin (gen2), ethereum
+    // (gen2). Without the guard, gen1 would resume and also fetch ethereum -> 4 calls.
+    // This is the property that actually breaks if the guard regresses.
+    expect(spy).toHaveBeenCalledTimes(3)
 
     // Final state must reflect invocation 2 (price 999 per coin), not a late write
     // from invocation 1 (price 100) landing after invocation 2 has already finished.
