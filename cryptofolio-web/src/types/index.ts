@@ -32,8 +32,13 @@ export interface CoinPrice {
 }
 
 export interface PortfolioDataPoint {
-  date: Date
+  date: number // ms epoch
   value: number
+}
+
+export interface HistoryPoint {
+  ts: number // ms epoch
+  price: number
 }
 
 export type Currency = 'usd' | 'eur'
