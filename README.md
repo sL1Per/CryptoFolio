@@ -8,7 +8,7 @@ historical value chart — all stored **on your device**, no account, no backend
 > proxied through a small serverless function that adds caching and rate-limit protection.
 > Your holdings never leave the browser (`localStorage`).
 
-<!-- Add a screenshot here once hosted, e.g. ![CryptoFolio](docs/screenshot.png) -->
+![CryptoFolio — dark, terminal-inspired crypto portfolio tracker](assets/screenshot.png)
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-ffc850.svg)
 ![React](https://img.shields.io/badge/React-19-149eca.svg)
