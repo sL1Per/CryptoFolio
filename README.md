@@ -39,7 +39,8 @@ historical value chart — all stored **on your device**, no account, no backend
 | State | Zustand (with `persist`) |
 | Charts | Recharts |
 | Routing | React Router 8 |
-| API proxy | Cloudflare Pages Functions (Workers) — see [AWS alternative](#deployment) |
+| API proxy | Cloudflare Pages Functions (Workers) |
+| Hosting | Cloudflare Pages (free tier) |
 | Tests | Vitest + Testing Library |
 
 ## Getting started
@@ -58,13 +59,13 @@ npm run build     # type-check + production build to dist/
 
 ## Deployment
 
-CryptoFolio is a static SPA plus three `/api/*` proxy endpoints. Two supported targets:
+CryptoFolio is a static SPA plus three `/api/*` proxy endpoints, deployed to
+**Cloudflare Pages** (free tier) — the static site and the Pages Functions proxy live on
+one origin. A full step-by-step guide (Wrangler CLI **and** the Cloudflare dashboard, plus
+custom domains and caching notes) is in
+[`cryptofolio-web/DEPLOY_CLOUDFLARE.md`](cryptofolio-web/DEPLOY_CLOUDFLARE.md).
 
-- **Cloudflare Pages** (current): `npx wrangler pages deploy dist` — see
-  [`cryptofolio-web/README.md`](cryptofolio-web/README.md).
-- **AWS free tier** (S3 + CloudFront + Lambda): a full step-by-step guide with both a
-  console walkthrough and an infrastructure-as-code (SAM) template lives in
-  [`cryptofolio-web/DEPLOY_AWS.md`](cryptofolio-web/DEPLOY_AWS.md).
+Quick version: `cd cryptofolio-web && npm run build && npx wrangler pages deploy dist`.
 
 ## Project structure
 
@@ -75,8 +76,7 @@ CryptoFolio/
 └── cryptofolio-web/          # the web app
     ├── src/                  # React app (components, store, lib, routes)
     ├── functions/api/        # Cloudflare Pages Functions — CoinGecko proxy
-    ├── infra/                # AWS deployment: Lambda handler + SAM template
-    ├── DEPLOY_AWS.md         # AWS free-tier deployment guide
+    ├── DEPLOY_CLOUDFLARE.md  # Cloudflare Pages deployment guide
     └── README.md             # web-app dev notes
 ```
 
@@ -90,7 +90,8 @@ The frontend never calls CoinGecko directly. It calls same-origin `/api/prices`,
 - **keeps the last known value** and serves it if CoinGecko returns `429`, so the UI never
   blanks out when rate-limited.
 
-The same logic ships for both Cloudflare (`functions/api/`) and AWS (`infra/lambda/`).
+The proxy runs as Cloudflare Pages Functions on the Workers runtime (`functions/api/`),
+using the Cache API for edge caching.
 
 ## License
 

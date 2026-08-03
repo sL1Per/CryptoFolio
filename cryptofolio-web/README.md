@@ -23,5 +23,6 @@ overview.
 > uses a build-watch + `wrangler pages dev` combo instead (same result: one origin, live data).
 
 ## Deploy
-- **Cloudflare Pages** (run against your own account): `npx wrangler pages deploy dist`
-- **AWS free tier** (S3 + CloudFront + Lambda): see [`DEPLOY_AWS.md`](DEPLOY_AWS.md)
+Deployed to **Cloudflare Pages** (free tier). Quick deploy: `npm run build && npx wrangler
+pages deploy dist`. Full guide (Wrangler CLI + Cloudflare dashboard, custom domains,
+caching): [`DEPLOY_CLOUDFLARE.md`](DEPLOY_CLOUDFLARE.md).
