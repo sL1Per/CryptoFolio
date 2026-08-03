@@ -72,7 +72,6 @@ CryptoFolio is a static SPA plus three `/api/*` proxy endpoints. Two supported t
 CryptoFolio/
 ├── README.md                 # you are here
 ├── LICENSE                   # MIT
-├── CLAUDE.md                 # project brief for Claude Code sessions
 └── cryptofolio-web/          # the web app
     ├── src/                  # React app (components, store, lib, routes)
     ├── functions/api/        # Cloudflare Pages Functions — CoinGecko proxy
