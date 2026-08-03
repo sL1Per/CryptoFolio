@@ -47,7 +47,7 @@ npm run dev        # full app + /api proxy on one origin (live prices), wrangler
 npm run dev:ui     # Vite only — fast HMR for pure UI work (/api calls 404 here)
 npm test           # Vitest suite
 npm run build      # tsc -b + functions type-check + vite build → dist/
-node --test infra/lambda   # unit tests for the AWS Lambda proxy port
+node --test infra/lambda/*.test.mjs   # unit tests for the AWS Lambda proxy port
 ```
 
 ---

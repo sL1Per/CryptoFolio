@@ -31,4 +31,4 @@ jobs:
         run: npm test
 
       - name: API proxy tests (AWS Lambda port)
-        run: node --test infra/lambda
+        run: node --test infra/lambda/*.test.mjs
