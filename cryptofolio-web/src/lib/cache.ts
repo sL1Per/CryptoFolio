@@ -48,3 +48,11 @@ export function saveChartCache(cache: ChartCache): void {
     /* quota / unavailable — ignore, mirrors native best-effort persistence */
   }
 }
+
+export function clearChartCache(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    /* unavailable — ignore */
+  }
+}

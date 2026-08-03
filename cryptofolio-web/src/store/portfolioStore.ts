@@ -5,7 +5,7 @@ import { newHolding } from '../types'
 import * as coingecko from '../lib/coingecko'
 import { RateLimitedError, fetchCoinHistory } from '../lib/coingecko'
 import {
-  loadChartCache, saveChartCache, chartCacheKey, isCacheValid, type ChartCache, type ChartCacheEntry,
+  loadChartCache, saveChartCache, clearChartCache, chartCacheKey, isCacheValid, type ChartCache, type ChartCacheEntry,
 } from '../lib/cache'
 import { buildPortfolioDataPoints } from '../lib/portfolioHistory'
 
@@ -44,6 +44,8 @@ interface PortfolioState {
   addHolding: (coin: Coin, amount: number, exchangeId: string) => void
   updateHolding: (id: string, amount: number, exchangeId: string) => void
   removeHolding: (id: string) => void
+  importPortfolio: (holdings: Holding[], currency?: Currency) => void
+  resetAll: () => void
   setGroupMode: (mode: GroupMode) => void
   setSortMode: (mode: SortMode) => void
   setCurrency: (currency: Currency) => void
@@ -83,6 +85,31 @@ export const usePortfolioStore = create<PortfolioState>()(
         })),
 
       removeHolding: (id) => set((s) => ({ holdings: s.holdings.filter((h) => h.id !== id) })),
+
+      importPortfolio: (holdings, currency) =>
+        set((s) => ({ holdings, currency: currency ?? s.currency })),
+
+      resetAll: () => {
+        clearChartCache()
+        set({
+          holdings: [],
+          groupMode: 'token',
+          sortMode: 'value',
+          currency: 'usd',
+          prices: {},
+          coinImages: {},
+          isLoading: false,
+          lastUpdated: null,
+          errorMessage: null,
+          historicalData: [],
+          isLoadingChart: false,
+          chartError: null,
+          chartLoadingStatus: '',
+          chartCachedAt: null,
+          chartIsStale: false,
+          chartCache: {},
+        })
+      },
 
       setGroupMode: (groupMode) => set({ groupMode }),
       setSortMode: (sortMode) => set({ sortMode }),

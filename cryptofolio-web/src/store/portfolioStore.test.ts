@@ -40,6 +40,61 @@ describe('portfolioStore', () => {
   })
 })
 
+describe('resetAll action', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  it('clears holdings and restores default group/sort/currency', () => {
+    usePortfolioStore.setState({
+      holdings: [{ id: 'x', coin: btc, amount: 2, exchangeId: 'coinbase' }],
+      currency: 'eur',
+      groupMode: 'exchange',
+      sortMode: 'name',
+    })
+    usePortfolioStore.getState().resetAll()
+    const s = usePortfolioStore.getState()
+    expect(s.holdings).toEqual([])
+    expect(s.currency).toBe('usd')
+    expect(s.groupMode).toBe('token')
+    expect(s.sortMode).toBe('value')
+  })
+
+  it('clears live price data and status', () => {
+    usePortfolioStore.setState({
+      prices: { bitcoin: { usd: 1, eur: 1, usd_24h_change: 0, eur_24h_change: 0 } },
+      coinImages: { bitcoin: 'img.png' },
+      lastUpdated: 123,
+      errorMessage: 'boom',
+    })
+    usePortfolioStore.getState().resetAll()
+    const s = usePortfolioStore.getState()
+    expect(s.prices).toEqual({})
+    expect(s.coinImages).toEqual({})
+    expect(s.lastUpdated).toBeNull()
+    expect(s.errorMessage).toBeNull()
+  })
+
+  it('clears the chart cache in state and localStorage', () => {
+    localStorage.setItem('cryptofolio_chartcache_v1', '[{"coinId":"bitcoin"}]')
+    usePortfolioStore.setState({
+      chartCache: { 'bitcoin|usd|7D': { coinId: 'bitcoin', currency: 'usd', range: '7D', fetchedAt: 1, points: [] } },
+      historicalData: [{ date: 1, value: 5 }],
+      chartError: 'err',
+      chartCachedAt: 999,
+      chartIsStale: true,
+    })
+    usePortfolioStore.getState().resetAll()
+    const s = usePortfolioStore.getState()
+    expect(s.chartCache).toEqual({})
+    expect(s.historicalData).toEqual([])
+    expect(s.chartError).toBeNull()
+    expect(s.chartCachedAt).toBeNull()
+    expect(s.chartIsStale).toBe(false)
+    expect(localStorage.getItem('cryptofolio_chartcache_v1')).toBeNull()
+  })
+})
+
 afterEach(() => vi.restoreAllMocks())
 
 describe('fetchPrices action', () => {
