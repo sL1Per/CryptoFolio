@@ -1,27 +1,37 @@
 import { describe, it, expect } from 'vitest'
 import { buildPortfolioExport, exportFilename, parsePortfolioImport } from './exportPortfolio'
-import type { Holding } from '../types'
+import type { Exchange, Holding } from '../types'
 
 const holdings: Holding[] = [
   { id: 'a1', coin: { id: 'bitcoin', symbol: 'btc', name: 'Bitcoin' }, amount: 0.5, exchangeId: 'kraken' },
   { id: 'b2', coin: { id: 'ethereum', symbol: 'eth', name: 'Ethereum' }, amount: 3, exchangeId: 'coinbase' },
 ]
 
+const customExchanges: Exchange[] = [
+  { id: 'custom_river', name: 'River', color: 'E8831D', domain: 'river.com' },
+]
+
 describe('buildPortfolioExport', () => {
-  it('wraps holdings with app metadata, currency, and an ISO timestamp', () => {
+  it('wraps holdings and custom exchanges with metadata, currency, and an ISO timestamp', () => {
     const now = new Date('2026-08-03T12:34:56.000Z')
-    const out = buildPortfolioExport(holdings, 'eur', now)
+    const out = buildPortfolioExport(holdings, 'eur', customExchanges, now)
     expect(out).toEqual({
       app: 'CryptoFolio',
-      version: 1,
+      version: 2,
       exportedAt: '2026-08-03T12:34:56.000Z',
       currency: 'eur',
       holdings,
+      customExchanges,
     })
   })
 
+  it('defaults custom exchanges to an empty array', () => {
+    const out = buildPortfolioExport(holdings, 'usd')
+    expect(out.customExchanges).toEqual([])
+  })
+
   it('round-trips through JSON without loss', () => {
-    const out = buildPortfolioExport(holdings, 'usd', new Date('2026-08-03T00:00:00.000Z'))
+    const out = buildPortfolioExport(holdings, 'usd', customExchanges, new Date('2026-08-03T00:00:00.000Z'))
     expect(JSON.parse(JSON.stringify(out))).toEqual(out)
   })
 })
@@ -33,11 +43,24 @@ describe('exportFilename', () => {
 })
 
 describe('parsePortfolioImport', () => {
-  it('round-trips an exported file', () => {
-    const json = JSON.stringify(buildPortfolioExport(holdings, 'eur', new Date()))
+  it('round-trips an exported file including custom exchanges', () => {
+    const json = JSON.stringify(buildPortfolioExport(holdings, 'eur', customExchanges, new Date()))
     const parsed = parsePortfolioImport(json)
     expect(parsed.holdings).toEqual(holdings)
     expect(parsed.currency).toBe('eur')
+    expect(parsed.customExchanges).toEqual(customExchanges)
+  })
+
+  it('tolerates a v1 file with no custom exchanges', () => {
+    const json = JSON.stringify({ version: 1, holdings, currency: 'usd' })
+    const parsed = parsePortfolioImport(json)
+    expect(parsed.holdings).toEqual(holdings)
+    expect(parsed.customExchanges).toBeUndefined()
+  })
+
+  it('rejects a malformed custom exchange', () => {
+    const json = JSON.stringify({ holdings, customExchanges: [{ id: 'custom_x' }] })
+    expect(() => parsePortfolioImport(json)).toThrow(/exchange/i)
   })
 
   it('regenerates a missing holding id', () => {

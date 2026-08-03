@@ -18,7 +18,7 @@ const APPEARANCES: { value: AppearanceMode; label: string }[] = [
 ]
 
 export function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { currency, setCurrency, holdings, importPortfolio, resetAll } = usePortfolioStore()
+  const { currency, setCurrency, holdings, customExchanges, importPortfolio, resetAll } = usePortfolioStore()
   const { appearance, setAppearance } = useThemeStore()
   const fileRef = useRef<HTMLInputElement>(null)
   const [importError, setImportError] = useState<string | null>(null)
@@ -44,7 +44,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
         !window.confirm(`This will replace your current ${holdings.length} holding(s). Continue?`)
       )
         return
-      importPortfolio(parsed.holdings, parsed.currency)
+      importPortfolio(parsed.holdings, parsed.currency, parsed.customExchanges)
     } catch (err) {
       setImportError(err instanceof Error ? err.message : 'Could not import file.')
     }
@@ -69,7 +69,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
         <div className="flex flex-col gap-2">
           <span className="text-xs uppercase tracking-wider text-text-tertiary">Data</span>
           <button
-            onClick={() => downloadPortfolioJson(holdings, currency)}
+            onClick={() => downloadPortfolioJson(holdings, currency, Object.values(customExchanges))}
             disabled={holdings.length === 0}
             className="flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-text-secondary hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed"
           >

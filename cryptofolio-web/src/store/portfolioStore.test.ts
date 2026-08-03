@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { usePortfolioStore } from './portfolioStore'
+import { findExchange } from '../lib/constants'
 import * as api from '../lib/coingecko'
 import { RateLimitedError } from '../lib/coingecko'
 
@@ -37,6 +38,53 @@ describe('portfolioStore', () => {
   it('persists holdings to localStorage', () => {
     usePortfolioStore.getState().addHolding(btc, 2, 'coinbase')
     expect(localStorage.getItem('cryptofolio_holdings_v2')).toContain('bitcoin')
+  })
+})
+
+describe('custom exchanges', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    usePortfolioStore.setState({ holdings: [], customExchanges: {} })
+  })
+
+  it('addCustomExchange stores and returns a new exchange', () => {
+    const ex = usePortfolioStore.getState().addCustomExchange('River Financial', 'river.com')
+    expect(ex.id).toBe('custom_river-financial')
+    expect(ex.domain).toBe('river.com')
+    expect(usePortfolioStore.getState().customExchanges[ex.id]).toEqual(ex)
+  })
+
+  it('addCustomExchange dedupes by name and does not overwrite the original', () => {
+    const first = usePortfolioStore.getState().addCustomExchange('River', 'river.com')
+    const second = usePortfolioStore.getState().addCustomExchange('River', 'different.com')
+    expect(second).toEqual(first)
+    expect(Object.keys(usePortfolioStore.getState().customExchanges)).toHaveLength(1)
+  })
+
+  it('persists custom exchanges to localStorage', () => {
+    usePortfolioStore.getState().addCustomExchange('River', 'river.com')
+    expect(localStorage.getItem('cryptofolio_holdings_v2')).toContain('custom_river')
+  })
+
+  it('makes custom exchanges resolvable via findExchange', () => {
+    const ex = usePortfolioStore.getState().addCustomExchange('River', 'river.com')
+    expect(findExchange(ex.id)).toEqual(ex)
+  })
+
+  it('resetAll clears custom exchanges', () => {
+    usePortfolioStore.getState().addCustomExchange('River', 'river.com')
+    usePortfolioStore.getState().resetAll()
+    expect(usePortfolioStore.getState().customExchanges).toEqual({})
+  })
+
+  it('importPortfolio merges imported custom exchanges', () => {
+    const custom = { id: 'custom_river', name: 'River', color: 'E8831D', domain: 'river.com' }
+    usePortfolioStore.getState().importPortfolio(
+      [{ id: 'h1', coin: btc, amount: 1, exchangeId: 'custom_river' }],
+      'usd',
+      [custom],
+    )
+    expect(usePortfolioStore.getState().customExchanges['custom_river']).toEqual(custom)
   })
 })
 

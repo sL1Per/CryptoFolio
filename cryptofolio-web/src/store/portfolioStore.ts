@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Coin, CoinPrice, Currency, GroupMode, Holding, SortMode, TimeRange, PortfolioDataPoint } from '../types'
+import type { Coin, CoinPrice, Currency, Exchange, GroupMode, Holding, SortMode, TimeRange, PortfolioDataPoint } from '../types'
 import { newHolding } from '../types'
+import { createCustomExchange, registerCustomExchangeLookup } from '../lib/constants'
 import * as coingecko from '../lib/coingecko'
 import { RateLimitedError, fetchCoinHistory } from '../lib/coingecko'
 import {
@@ -20,6 +21,7 @@ let chartFetchGeneration = 0
 
 interface PortfolioState {
   holdings: Holding[]
+  customExchanges: Record<string, Exchange>
   groupMode: GroupMode
   sortMode: SortMode
   currency: Currency
@@ -44,7 +46,8 @@ interface PortfolioState {
   addHolding: (coin: Coin, amount: number, exchangeId: string) => void
   updateHolding: (id: string, amount: number, exchangeId: string) => void
   removeHolding: (id: string) => void
-  importPortfolio: (holdings: Holding[], currency?: Currency) => void
+  addCustomExchange: (name: string, website?: string) => Exchange
+  importPortfolio: (holdings: Holding[], currency?: Currency, customExchanges?: Exchange[]) => void
   resetAll: () => void
   setGroupMode: (mode: GroupMode) => void
   setSortMode: (mode: SortMode) => void
@@ -58,6 +61,7 @@ export const usePortfolioStore = create<PortfolioState>()(
   persist(
     (set, get) => ({
       holdings: [],
+      customExchanges: {},
       groupMode: 'token',
       sortMode: 'value',
       currency: 'usd',
@@ -86,13 +90,28 @@ export const usePortfolioStore = create<PortfolioState>()(
 
       removeHolding: (id) => set((s) => ({ holdings: s.holdings.filter((h) => h.id !== id) })),
 
-      importPortfolio: (holdings, currency) =>
-        set((s) => ({ holdings, currency: currency ?? s.currency })),
+      addCustomExchange: (name, website) => {
+        const ex = createCustomExchange(name, website)
+        const existing = get().customExchanges[ex.id]
+        if (existing) return existing
+        set((s) => ({ customExchanges: { ...s.customExchanges, [ex.id]: ex } }))
+        return ex
+      },
+
+      importPortfolio: (holdings, currency, customExchanges) =>
+        set((s) => ({
+          holdings,
+          currency: currency ?? s.currency,
+          customExchanges: customExchanges
+            ? { ...s.customExchanges, ...Object.fromEntries(customExchanges.map((e) => [e.id, e])) }
+            : s.customExchanges,
+        })),
 
       resetAll: () => {
         clearChartCache()
         set({
           holdings: [],
+          customExchanges: {},
           groupMode: 'token',
           sortMode: 'value',
           currency: 'usd',
@@ -256,6 +275,7 @@ export const usePortfolioStore = create<PortfolioState>()(
       name: 'cryptofolio_holdings_v2',
       partialize: (s) => ({
         holdings: s.holdings,
+        customExchanges: s.customExchanges,
         currency: s.currency,
         groupMode: s.groupMode,
         sortMode: s.sortMode,
@@ -263,3 +283,7 @@ export const usePortfolioStore = create<PortfolioState>()(
     },
   ),
 )
+
+// Let `findExchange` (in lib/constants) resolve user-created exchanges without a
+// static import cycle. Reads live state, so newly-added customs resolve immediately.
+registerCustomExchangeLookup((id) => usePortfolioStore.getState().customExchanges[id])

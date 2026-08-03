@@ -1,25 +1,28 @@
-import type { Currency, Holding } from '../types'
+import type { Currency, Exchange, Holding } from '../types'
 
 export interface PortfolioExport {
   app: 'CryptoFolio'
-  version: 1
+  version: 2
   exportedAt: string // ISO 8601
   currency: Currency
   holdings: Holding[]
+  customExchanges: Exchange[]
 }
 
 /** Build the serializable export payload (pure — no DOM, easy to test). */
 export function buildPortfolioExport(
   holdings: Holding[],
   currency: Currency,
+  customExchanges: Exchange[] = [],
   now: Date = new Date(),
 ): PortfolioExport {
   return {
     app: 'CryptoFolio',
-    version: 1,
+    version: 2,
     exportedAt: now.toISOString(),
     currency,
     holdings,
+    customExchanges,
   }
 }
 
@@ -31,6 +34,20 @@ export function exportFilename(now: Date = new Date()): string {
 export interface ParsedImport {
   holdings: Holding[]
   currency?: Currency
+  customExchanges?: Exchange[]
+}
+
+function toExchange(raw: unknown, i: number): Exchange {
+  if (!raw || typeof raw !== 'object') throw new Error(`Custom exchange #${i + 1} is malformed.`)
+  const e = raw as Record<string, unknown>
+  if (
+    typeof e.id !== 'string' || e.id.length === 0 ||
+    typeof e.name !== 'string' ||
+    typeof e.color !== 'string' ||
+    typeof e.domain !== 'string'
+  )
+    throw new Error(`Custom exchange #${i + 1} is missing required fields.`)
+  return { id: e.id, name: e.name, color: e.color, domain: e.domain }
 }
 
 function toHolding(raw: unknown, i: number): Holding {
@@ -67,12 +84,19 @@ export function parsePortfolioImport(text: string): ParsedImport {
   if (!Array.isArray(obj.holdings)) throw new Error('No holdings found in file.')
   const holdings = obj.holdings.map((raw, i) => toHolding(raw, i))
   const currency = obj.currency === 'usd' || obj.currency === 'eur' ? obj.currency : undefined
-  return { holdings, currency }
+  const customExchanges = Array.isArray(obj.customExchanges)
+    ? obj.customExchanges.map((raw, i) => toExchange(raw, i))
+    : undefined
+  return { holdings, currency, customExchanges }
 }
 
 /** Serialize the portfolio and trigger a browser download. */
-export function downloadPortfolioJson(holdings: Holding[], currency: Currency): void {
-  const json = JSON.stringify(buildPortfolioExport(holdings, currency), null, 2)
+export function downloadPortfolioJson(
+  holdings: Holding[],
+  currency: Currency,
+  customExchanges: Exchange[] = [],
+): void {
+  const json = JSON.stringify(buildPortfolioExport(holdings, currency, customExchanges), null, 2)
   const blob = new Blob([json], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')

@@ -39,8 +39,65 @@ export const EXCHANGES: Exchange[] = [
   { id: 'other', name: 'Other', color: '666666', domain: '' },
 ]
 
+// Lets `findExchange` resolve user-created exchanges without importing the store
+// (which would create a constants → store → coingecko → constants import cycle).
+// The store registers a lookup into its persisted `customExchanges` map on load.
+let customExchangeLookup: (id: string) => Exchange | undefined = () => undefined
+
+export function registerCustomExchangeLookup(fn: (id: string) => Exchange | undefined): void {
+  customExchangeLookup = fn
+}
+
 export function findExchange(id: string): Exchange {
-  return EXCHANGES.find((e) => e.id === id) ?? { id, name: id, color: '666666', domain: '' }
+  return (
+    EXCHANGES.find((e) => e.id === id) ??
+    customExchangeLookup(id) ??
+    { id, name: id, color: '666666', domain: '' }
+  )
+}
+
+// Palette for auto-coloring custom exchanges — all distinctly non-grey so the
+// fallback dot stays legible when a custom exchange has no logo.
+const CUSTOM_EXCHANGE_COLORS = [
+  'E8831D', '16B157', '5741D9', '00A3FF', 'F7A600', 'FF6B35', '1199FA', '9B59B6',
+]
+
+/** Strip scheme, `www.`, and any path/query — keep the bare lowercase host. */
+export function normalizeExchangeDomain(input: string): string {
+  const trimmed = input.trim().toLowerCase()
+  if (!trimmed) return ''
+  return trimmed
+    .replace(/^[a-z]+:\/\//, '')
+    .split(/[/?#]/)[0]
+    .replace(/^www\./, '')
+}
+
+/** Deterministic, stable, non-grey color derived from a custom exchange's name. */
+export function colorForExchangeName(name: string): string {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0
+  return CUSTOM_EXCHANGE_COLORS[hash % CUSTOM_EXCHANGE_COLORS.length]
+}
+
+/** `custom_`-prefixed slug of the name — identical names dedupe to one id. */
+export function customExchangeId(name: string): string {
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return `custom_${slug || 'exchange'}`
+}
+
+/** Build a full {@link Exchange} from a user-entered name and optional website. */
+export function createCustomExchange(name: string, website = ''): Exchange {
+  const trimmed = name.trim()
+  return {
+    id: customExchangeId(trimmed),
+    name: trimmed,
+    color: colorForExchangeName(trimmed),
+    domain: normalizeExchangeDomain(website),
+  }
 }
 
 export const CURRENCY_META = {
