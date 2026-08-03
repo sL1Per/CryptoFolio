@@ -1,2 +1,26 @@
+# --- OS ---
 .DS_Store
 **/.DS_Store
+Thumbs.db
+
+# --- Editors / IDEs ---
+.vscode/
+.idea/
+*.swp
+
+# --- Local tooling (Claude Code / Superpowers) ---
+.claude/
+.superpowers/
+
+# --- Internal planning & design docs (kept local, not published) ---
+docs/
+WEB_MIGRATION.md
+
+# --- Archived macOS / SwiftUI app (kept local, not published) ---
+cryptofolio-MacOS/
+
+# --- Node (belt-and-suspenders; cryptofolio-web has its own .gitignore too) ---
+node_modules/
+dist/
+*.log
+*.tsbuildinfo

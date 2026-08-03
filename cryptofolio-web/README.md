@@ -1,13 +1,13 @@
 # CryptoFolio Web
 
-Web port of the CryptoFolio SwiftUI app. Vite + React + TypeScript SPA, deployed to
-Cloudflare Pages. See `../docs/superpowers/specs/2026-08-01-cryptofolio-web-migration-design.md`.
+Vite + React + TypeScript SPA. See the [root README](../README.md) for the project
+overview.
 
 ## Status
 - Phase 1 (foundation): holdings CRUD, grouping/sorting, theme, localStorage — DONE
 - Phase 2 (live data): CoinGecko prices + images via Pages Functions proxy (Cache API),
   keep-last-known on rate-limit, manual refresh — DONE
-- Phase 3 (historical charts) — planned
+- Phase 3 (historical charts) — DONE
 
 ## Develop
 - `npm install`
@@ -22,5 +22,6 @@ Cloudflare Pages. See `../docs/superpowers/specs/2026-08-01-cryptofolio-web-migr
 > Note: Wrangler 4 deprecated the old `pages dev -- <command>` proxy form, so `npm run dev`
 > uses a build-watch + `wrangler pages dev` combo instead (same result: one origin, live data).
 
-## Deploy (run yourself against your Cloudflare account)
-- `npx wrangler pages deploy dist`
+## Deploy
+- **Cloudflare Pages** (run against your own account): `npx wrangler pages deploy dist`
+- **AWS free tier** (S3 + CloudFront + Lambda): see [`DEPLOY_AWS.md`](DEPLOY_AWS.md)
