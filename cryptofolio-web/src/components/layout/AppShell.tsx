@@ -33,6 +33,9 @@ export function AppShell({
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-4 py-6">{children}</main>
+      <footer className="mx-auto max-w-3xl px-4 pb-8 pt-2">
+        <p className="text-center text-xs text-text-tertiary">Made with ♥ by Pedro Viegas and Claude.ai — 2026</p>
+      </footer>
     </div>
   )
 }
