@@ -83,8 +83,15 @@ is a monorepo (the app lives in `cryptofolio-web/`), the **root directory** sett
    | Build command | `npm run build` |
    | Build output directory | `dist` |
    | **Root directory** (Advanced) | `cryptofolio-web` |
-   Cloudflare auto-detects the `functions/` directory (relative to the root directory), so
-   the `/api/*` routes deploy automatically — no extra config.
+   > ⚠️ **The Root directory is essential** — this is a monorepo, so `package.json` lives in
+   > `cryptofolio-web/`, not the repo root. If you leave it blank, the build fails with
+   > `npm error ... Could not read package.json` / `ENOENT`. It also lets Cloudflare find
+   > `functions/` (relative to the root directory), so the `/api/*` routes deploy
+   > automatically — no extra config.
+
+   To change it after the project exists: **Settings → Builds & deployments → Build
+   configuration → Edit**, set Root directory to `cryptofolio-web`, save, then **Deployments →
+   Retry deployment**.
 4. Click **Save and Deploy.** The first build runs; when it finishes you get a
    `https://<project>.pages.dev` URL.
 5. **Verify:**
@@ -158,6 +165,7 @@ default.
 
 | Symptom | Cause / fix |
 |---|---|
+| Build fails immediately: `npm error ... Could not read package.json` / `ENOENT ... /repo/package.json` | **Root directory** isn't set. It must be `cryptofolio-web` (this is a monorepo). Settings → Builds & deployments → Build configuration → Edit → set it → Retry deployment. |
 | Build succeeds but the site is blank / 404 | Check **Build output directory = `dist`** and **Root directory = `cryptofolio-web`** (Method A). |
 | `/api/*` returns 404 | Functions weren't detected — ensure the root directory is `cryptofolio-web` so `functions/` sits directly under it. |
 | Prices empty, `/api/prices` returns `429` | CoinGecko free-tier rate limit (~30 req/min). Cache + keep-last-known cover normal use; wait a minute if you just added many coins. |
