@@ -11,6 +11,7 @@ Thumbs.db
 # --- Local tooling (Claude Code / Superpowers) ---
 .claude/
 .superpowers/
+CLAUDE.md
 
 # --- Internal planning & design docs (kept local, not published) ---
 docs/
