@@ -18,7 +18,7 @@ export function Modal({
       <div
         role="dialog"
         aria-label={title}
-        className="w-full max-w-md rounded-2xl border border-border bg-sheet-bg p-5"
+        className="flex max-h-[90dvh] w-full max-w-md flex-col overflow-y-auto rounded-2xl border border-border bg-sheet-bg p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">

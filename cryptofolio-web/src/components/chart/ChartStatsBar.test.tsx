@@ -23,4 +23,14 @@ describe('ChartStatsBar', () => {
     render(<ChartStatsBar data={[]} currency="usd" />)
     expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(5)
   })
+  it('renders all five stat cells (survives mobile grid reflow)', () => {
+    const data = [
+      { date: 1, value: 100 },
+      { date: 2, value: 150 },
+    ] as any
+    render(<ChartStatsBar data={data} currency="usd" />)
+    for (const label of ['START', 'CURRENT', 'PEAK', 'LOW', 'ABS. CHANGE']) {
+      expect(screen.getByText(label)).toBeInTheDocument()
+    }
+  })
 })

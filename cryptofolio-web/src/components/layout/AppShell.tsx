@@ -17,16 +17,16 @@ export function AppShell({
   return (
     <div className="min-h-full bg-app-bg">
       <header className="border-b border-border">
-        <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-4">
-          <h1 className="text-lg font-semibold tracking-tight text-gold">CryptoFolio</h1>
-          <div className="ml-auto flex items-center gap-2">
-            <button onClick={onRefresh} aria-label="Refresh prices" disabled={isRefreshing} className="rounded-lg border border-border p-2 text-text-secondary hover:text-text-primary disabled:opacity-50">
+        <div className="mx-auto flex max-w-3xl items-center gap-2 px-4 py-4 pt-[max(1rem,env(safe-area-inset-top))] sm:gap-3">
+          <h1 className="min-w-0 truncate text-lg font-semibold tracking-tight text-gold">CryptoFolio</h1>
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <button onClick={onRefresh} aria-label="Refresh prices" disabled={isRefreshing} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-border text-text-secondary hover:text-text-primary disabled:opacity-50">
               <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
             </button>
-            <button onClick={onAdd} aria-label="Add holding" className="flex items-center gap-1 rounded-lg bg-gold px-3 py-1.5 text-sm font-semibold text-black">
+            <button onClick={onAdd} aria-label="Add holding" className="flex min-h-[44px] items-center gap-1 rounded-lg bg-gold px-3 text-sm font-semibold text-black">
               <Plus size={16} /> Add
             </button>
-            <button onClick={onSettings} aria-label="Settings" className="rounded-lg border border-border p-2 text-text-secondary hover:text-text-primary">
+            <button onClick={onSettings} aria-label="Settings" className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-border text-text-secondary hover:text-text-primary">
               <Settings size={16} />
             </button>
           </div>

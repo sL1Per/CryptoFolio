@@ -17,9 +17,9 @@ export function TotalPortfolioCard() {
   const up = change >= 0
 
   return (
-    <div className="rounded-2xl border border-[var(--gold-border)] bg-[var(--gold-card-bg)] p-6">
+    <div className="rounded-2xl border border-[var(--gold-border)] bg-[var(--gold-card-bg)] p-5 sm:p-6">
       <div className="text-xs uppercase tracking-wider text-text-secondary">Total Portfolio Value</div>
-      <div className="mt-2 text-4xl font-semibold text-text-primary">{formatCurrency(total, snap.currency)}</div>
+      <div className="mt-2 text-3xl font-semibold tabular-nums break-words text-text-primary sm:text-4xl">{formatCurrency(total, snap.currency)}</div>
       <div className={`mt-1 text-sm ${up ? 'text-green' : 'text-red'}`}>
         {up ? '+' : ''}
         {formatCurrency(change, snap.currency)} ({asPercentChange(pct)}) 24h

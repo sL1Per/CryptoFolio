@@ -23,7 +23,7 @@ export function ControlBar() {
     <div className="flex flex-wrap items-center gap-3">
       <SegmentedControl options={GROUPS} value={groupMode} onChange={setGroupMode} />
       <SegmentedControl options={SORTS} value={sortMode} onChange={setSortMode} />
-      <div className="ml-auto">
+      <div className="w-full sm:ml-auto sm:w-auto">
         <SegmentedControl options={CURRENCIES} value={currency} onChange={setCurrency} />
       </div>
     </div>
