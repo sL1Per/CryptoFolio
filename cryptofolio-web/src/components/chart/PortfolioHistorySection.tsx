@@ -48,12 +48,12 @@ export function PortfolioHistorySection() {
           ) : null}
           <button
             onClick={() => fetchHistoricalData(true)} disabled={isLoading}
-            className="text-gold disabled:text-text-faint" aria-label="Refresh chart"
+            className="flex min-h-[40px] min-w-[40px] items-center justify-center text-gold disabled:text-text-faint" aria-label="Refresh chart"
           >
             <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
           </button>
           <button
-            onClick={() => setExpanded((v) => !v)} className="text-text-tertiary hover:text-text-primary"
+            onClick={() => setExpanded((v) => !v)} className="flex min-h-[40px] min-w-[40px] items-center justify-center text-text-tertiary hover:text-text-primary"
             aria-label={expanded ? 'Hide chart' : 'Show chart'}
           >
             {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
