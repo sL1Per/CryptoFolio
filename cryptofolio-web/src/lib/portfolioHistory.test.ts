@@ -1,8 +1,25 @@
 import { describe, it, expect } from 'vitest'
-import { buildPortfolioDataPoints } from './portfolioHistory'
+import { buildPortfolioDataPoints, buildTokenDataPoints } from './portfolioHistory'
 import type { HistoryPoint } from '../types'
 
 const pts = (...pairs: [number, number][]): HistoryPoint[] => pairs.map(([ts, price]) => ({ ts, price }))
+
+describe('buildTokenDataPoints', () => {
+  it('returns empty for no points', () => {
+    expect(buildTokenDataPoints([], 5)).toEqual([])
+  })
+
+  it('maps each point to price × amount', () => {
+    expect(buildTokenDataPoints(pts([1000, 10], [2000, 20]), 2)).toEqual([
+      { date: 1000, value: 20 },
+      { date: 2000, value: 40 },
+    ])
+  })
+
+  it('yields zeros when nothing is held', () => {
+    expect(buildTokenDataPoints(pts([1000, 10]), 0)).toEqual([{ date: 1000, value: 0 }])
+  })
+})
 
 describe('buildPortfolioDataPoints', () => {
   it('returns empty for no histories', () => {
