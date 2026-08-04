@@ -152,6 +152,36 @@ npx wrangler pages dev   # serve the built dist/ + Functions, mirroring producti
 
 ---
 
+## CoinGecko API key (optional)
+
+The proxy works with **no key** on CoinGecko's free tier, but that tier is rate-limited
+**per source IP** — and Pages Functions call CoinGecko from Cloudflare's *shared* egress
+IPs, so you compete for the ~30 req/min quota with every other Cloudflare tenant hitting
+the same API. That's the usual cause of persistent `429` / "Rate limited — showing last
+known prices" in production even when your own traffic is tiny. A free
+[CoinGecko **Demo** key](https://www.coingecko.com/en/api/pricing) ties the limit to your
+key instead of the shared IP and fixes this.
+
+Each endpoint resolves the key as **request header → `CG_API_KEY` env → none**, so there
+are two independent ways to supply one:
+
+- **Per-user, in the app** — Settings → *CoinGecko API key*. Stored only in that browser's
+  `localStorage` and sent to the proxy as an `x-cg-demo-api-key` header. No deploy needed;
+  best when each user brings their own key.
+- **Deployment-wide secret** — set `CG_API_KEY` so every request uses it by default (a
+  user's in-app key still overrides it). Add it as an **encrypted** environment variable:
+  - **Dashboard:** Pages project → **Settings → Environment variables** → add `CG_API_KEY`
+    (Production + Preview), mark it encrypted, then redeploy.
+  - **CLI:** `npx wrangler pages secret put CG_API_KEY`
+
+  For local `npm run dev`, put it in `cryptofolio-web/.dev.vars` as `CG_API_KEY=CG-…`
+  (gitignored — never commit it); wrangler loads it automatically.
+
+> Only the free **Demo** tier is wired up (`x-cg-demo-api-key`, `api.coingecko.com`).
+> Pro/Enterprise keys use a different header and host and aren't supported.
+
+---
+
 ## Caching notes
 
 Caching lives entirely in the Pages Functions (`functions/api/_lib/cacheProxy.ts`):
@@ -178,7 +208,7 @@ default.
 | Build fails immediately: `npm error ... Could not read package.json` / `ENOENT ... /repo/package.json` | **Root directory** isn't set. It must be `cryptofolio-web` (this is a monorepo). Settings → Builds & deployments → Build configuration → Edit → set it → Retry deployment. |
 | Build succeeds but the site is blank / 404 | Check **Build output directory = `dist`** and **Root directory = `cryptofolio-web`** (Method A). |
 | `/api/*` returns 404 | Functions weren't detected — ensure the root directory is `cryptofolio-web` so `functions/` sits directly under it. |
-| Prices empty, `/api/prices` returns `429` | CoinGecko free-tier rate limit (~30 req/min). Cache + keep-last-known cover normal use; wait a minute if you just added many coins. |
+| Prices empty, `/api/prices` returns `429` | CoinGecko free-tier rate limit (~30 req/min), shared across Cloudflare's egress IPs. Cache + keep-last-known cover normal use; wait a minute if you just added many coins. If it's persistent, add a [CoinGecko API key](#coingecko-api-key-optional). |
 | Build fails on `wrangler` version | This project targets Wrangler 4; `npx wrangler` uses the pinned dev dependency. |
 | Refreshing a route 404s | The SPA uses client routing; Pages serves `index.html` for unmatched paths by default, so this normally just works. |
 

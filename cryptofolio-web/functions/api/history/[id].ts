@@ -1,4 +1,4 @@
-import { cacheProxy, jsonResponse } from '../_lib/cacheProxy'
+import { cacheProxy, jsonResponse, coingeckoHeaders, resolveApiKey } from '../_lib/cacheProxy'
 
 export type HistoryParams = { id: string; days: number; vs: 'usd' | 'eur' }
 
@@ -27,12 +27,13 @@ export function historyTransform(json: unknown): { prices: [number, number][] } 
   return { prices }
 }
 
-export const onRequestGet: PagesFunction = async (context) => {
+export const onRequestGet: PagesFunction<{ CG_API_KEY?: string }> = async (context) => {
   const url = new URL(context.request.url)
   const id = context.params.id as string | undefined
   const params = validateHistoryRequest(id, url.searchParams.get('days'), url.searchParams.get('vs'))
   if (!params) return jsonResponse({ error: 'invalid request' }, {}, 400)
 
+  const apiKey = resolveApiKey(context.request.headers.get('x-cg-demo-api-key'), context.env.CG_API_KEY)
   return cacheProxy(
     {
       cacheKeyUrl: `https://cache.local/history?id=${params.id}&days=${params.days}&vs=${params.vs}`,
@@ -43,8 +44,7 @@ export const onRequestGet: PagesFunction = async (context) => {
     },
     {
       cache: caches.default,
-      fetchUpstream: (u) =>
-        fetch(u, { headers: { 'User-Agent': 'CryptoFolio/1.0 (+https://cryptofolio.app)', Accept: 'application/json' } }),
+      fetchUpstream: (u) => fetch(u, { headers: coingeckoHeaders(apiKey) }),
       now: () => Date.now(),
       waitUntil: (p) => context.waitUntil(p),
     },

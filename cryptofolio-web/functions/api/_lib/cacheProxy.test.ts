@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { cacheProxy, parseIds, type CacheLike } from './cacheProxy'
+import { cacheProxy, parseIds, coingeckoHeaders, resolveApiKey, type CacheLike } from './cacheProxy'
 
 function fakeCache(initial?: Response): { cache: CacheLike; store: { v?: Response } } {
   const store: { v?: Response } = { v: initial }
@@ -32,6 +32,36 @@ describe('parseIds', () => {
   it('caps to 250 ids', () => {
     const many = Array.from({ length: 300 }, (_, i) => `c${i}`).join(',')
     expect(parseIds(many)!.length).toBe(250)
+  })
+})
+
+describe('coingeckoHeaders', () => {
+  it('always sends a descriptive User-Agent and JSON Accept', () => {
+    const h = coingeckoHeaders()
+    expect(h['User-Agent']).toContain('CryptoFolio')
+    expect(h['Accept']).toBe('application/json')
+  })
+  it('omits the demo key header when no key is given', () => {
+    expect(coingeckoHeaders()['x-cg-demo-api-key']).toBeUndefined()
+    expect(coingeckoHeaders('')['x-cg-demo-api-key']).toBeUndefined()
+    expect(coingeckoHeaders(undefined)['x-cg-demo-api-key']).toBeUndefined()
+  })
+  it('attaches the demo key header when a key is provided', () => {
+    expect(coingeckoHeaders('CG-abc123')['x-cg-demo-api-key']).toBe('CG-abc123')
+  })
+})
+
+describe('resolveApiKey', () => {
+  it('prefers the caller-supplied header key over the env secret', () => {
+    expect(resolveApiKey('CG-fromheader', 'CG-fromenv')).toBe('CG-fromheader')
+  })
+  it('falls back to the env secret when no header key is present', () => {
+    expect(resolveApiKey(null, 'CG-fromenv')).toBe('CG-fromenv')
+    expect(resolveApiKey('', 'CG-fromenv')).toBe('CG-fromenv')
+  })
+  it('returns undefined when neither is present', () => {
+    expect(resolveApiKey(null, undefined)).toBeUndefined()
+    expect(resolveApiKey('', '')).toBeUndefined()
   })
 })
 

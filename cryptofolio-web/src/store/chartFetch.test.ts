@@ -32,7 +32,7 @@ describe('fetchHistoricalData', () => {
     const p = usePortfolioStore.getState().fetchHistoricalData()
     await vi.runAllTimersAsync()
     await p
-    expect(spy).toHaveBeenCalledWith('bitcoin', '7D', 'usd')
+    expect(spy).toHaveBeenCalledWith('bitcoin', '7D', 'usd', '')
     expect(usePortfolioStore.getState().historicalData).toEqual([
       { date: 1000, value: 20 }, { date: 2000, value: 40 },
     ])

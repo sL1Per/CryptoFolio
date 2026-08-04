@@ -143,9 +143,49 @@ describe('resetAll action', () => {
   })
 })
 
+describe('apiKey', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    usePortfolioStore.setState({ apiKey: '', holdings: [] })
+  })
+
+  it('defaults to an empty string', () => {
+    expect(usePortfolioStore.getState().apiKey).toBe('')
+  })
+
+  it('setApiKey stores and persists the key', () => {
+    usePortfolioStore.getState().setApiKey('CG-user123')
+    expect(usePortfolioStore.getState().apiKey).toBe('CG-user123')
+    expect(localStorage.getItem('cryptofolio_holdings_v2')).toContain('CG-user123')
+  })
+
+  it('resetAll clears the key', () => {
+    usePortfolioStore.getState().setApiKey('CG-user123')
+    usePortfolioStore.getState().resetAll()
+    expect(usePortfolioStore.getState().apiKey).toBe('')
+  })
+
+  it('importPortfolio restores the key when present', () => {
+    usePortfolioStore.getState().importPortfolio(
+      [{ id: 'h1', coin: btc, amount: 1, exchangeId: 'coinbase' }],
+      'usd',
+      undefined,
+      'CG-imported',
+    )
+    expect(usePortfolioStore.getState().apiKey).toBe('CG-imported')
+  })
+})
+
 afterEach(() => vi.restoreAllMocks())
 
 describe('fetchPrices action', () => {
+  it('forwards the configured apiKey to the client', async () => {
+    usePortfolioStore.setState({ holdings: [{ id: 'x', coin: btc2, amount: 1, exchangeId: 'coinbase' }], apiKey: 'CG-user123', coinImages: { bitcoin: 'x' } })
+    const spy = vi.spyOn(api, 'fetchPrices').mockResolvedValue({ bitcoin: { usd: 1, eur: 1, usd_24h_change: 0, eur_24h_change: 0 } })
+    await usePortfolioStore.getState().fetchPrices()
+    expect(spy).toHaveBeenCalledWith(['bitcoin'], 'CG-user123')
+  })
+
   it('populates prices + images and sets lastUpdated on success', async () => {
     usePortfolioStore.setState({ holdings: [{ id: 'x', coin: btc2, amount: 1, exchangeId: 'coinbase' }], prices: {}, coinImages: {}, lastUpdated: null, errorMessage: null })
     vi.spyOn(api, 'fetchPrices').mockResolvedValue({ bitcoin: { usd: 100, eur: 90, usd_24h_change: 1, eur_24h_change: 1 } })

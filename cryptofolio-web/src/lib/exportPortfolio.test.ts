@@ -34,6 +34,16 @@ describe('buildPortfolioExport', () => {
     const out = buildPortfolioExport(holdings, 'usd', customExchanges, new Date('2026-08-03T00:00:00.000Z'))
     expect(JSON.parse(JSON.stringify(out))).toEqual(out)
   })
+
+  it('includes the API key when one is set', () => {
+    const out = buildPortfolioExport(holdings, 'usd', customExchanges, new Date(), 'CG-secret')
+    expect(out.apiKey).toBe('CG-secret')
+  })
+
+  it('omits the API key field when empty', () => {
+    const out = buildPortfolioExport(holdings, 'usd', customExchanges, new Date(), '')
+    expect('apiKey' in out).toBe(false)
+  })
 })
 
 describe('exportFilename', () => {
@@ -49,6 +59,16 @@ describe('parsePortfolioImport', () => {
     expect(parsed.holdings).toEqual(holdings)
     expect(parsed.currency).toBe('eur')
     expect(parsed.customExchanges).toEqual(customExchanges)
+  })
+
+  it('round-trips the API key when present', () => {
+    const json = JSON.stringify(buildPortfolioExport(holdings, 'usd', customExchanges, new Date(), 'CG-secret'))
+    expect(parsePortfolioImport(json).apiKey).toBe('CG-secret')
+  })
+
+  it('leaves apiKey undefined when the file has none', () => {
+    const json = JSON.stringify(buildPortfolioExport(holdings, 'usd'))
+    expect(parsePortfolioImport(json).apiKey).toBeUndefined()
   })
 
   it('tolerates a v1 file with no custom exchanges', () => {

@@ -18,7 +18,7 @@ describe('fetchCoinHistory', () => {
     }) as unknown as Response)
     vi.stubGlobal('fetch', spy)
     const result = await fetchCoinHistory('bitcoin', '1Y', 'eur')
-    expect(spy).toHaveBeenCalledWith('/api/history/bitcoin?days=365&vs=eur')
+    expect(spy).toHaveBeenCalledWith('/api/history/bitcoin?days=365&vs=eur', { headers: undefined })
     expect(result).toEqual({ ok: true, points: [{ ts: 1000, price: 1.5 }, { ts: 2000, price: 2.5 }] })
   })
 

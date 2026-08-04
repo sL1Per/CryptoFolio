@@ -25,6 +25,7 @@ interface PortfolioState {
   groupMode: GroupMode
   sortMode: SortMode
   currency: Currency
+  apiKey: string
 
   // Live-data fields (populated in Phase 2; empty here)
   prices: Record<string, CoinPrice>
@@ -47,8 +48,9 @@ interface PortfolioState {
   updateHolding: (id: string, amount: number, exchangeId: string) => void
   removeHolding: (id: string) => void
   addCustomExchange: (name: string, website?: string) => Exchange
-  importPortfolio: (holdings: Holding[], currency?: Currency, customExchanges?: Exchange[]) => void
+  importPortfolio: (holdings: Holding[], currency?: Currency, customExchanges?: Exchange[], apiKey?: string) => void
   resetAll: () => void
+  setApiKey: (apiKey: string) => void
   setGroupMode: (mode: GroupMode) => void
   setSortMode: (mode: SortMode) => void
   setCurrency: (currency: Currency) => void
@@ -65,6 +67,7 @@ export const usePortfolioStore = create<PortfolioState>()(
       groupMode: 'token',
       sortMode: 'value',
       currency: 'usd',
+      apiKey: '',
       prices: {},
       coinImages: {},
       isLoading: false,
@@ -98,10 +101,11 @@ export const usePortfolioStore = create<PortfolioState>()(
         return ex
       },
 
-      importPortfolio: (holdings, currency, customExchanges) =>
+      importPortfolio: (holdings, currency, customExchanges, apiKey) =>
         set((s) => ({
           holdings,
           currency: currency ?? s.currency,
+          apiKey: apiKey ?? s.apiKey,
           customExchanges: customExchanges
             ? { ...s.customExchanges, ...Object.fromEntries(customExchanges.map((e) => [e.id, e])) }
             : s.customExchanges,
@@ -115,6 +119,7 @@ export const usePortfolioStore = create<PortfolioState>()(
           groupMode: 'token',
           sortMode: 'value',
           currency: 'usd',
+          apiKey: '',
           prices: {},
           coinImages: {},
           isLoading: false,
@@ -133,12 +138,14 @@ export const usePortfolioStore = create<PortfolioState>()(
       setGroupMode: (groupMode) => set({ groupMode }),
       setSortMode: (sortMode) => set({ sortMode }),
       setCurrency: (currency) => set({ currency }),
+      setApiKey: (apiKey) => set({ apiKey }),
       fetchPrices: async () => {
         const ids = [...new Set(get().holdings.map((h) => h.coin.id))]
         if (ids.length === 0) return
+        const apiKey = get().apiKey
         set({ isLoading: true, errorMessage: null })
         try {
-          const prices = await coingecko.fetchPrices(ids)
+          const prices = await coingecko.fetchPrices(ids, apiKey)
           set({ prices, lastUpdated: Date.now() })
         } catch (err) {
           set({
@@ -154,7 +161,7 @@ export const usePortfolioStore = create<PortfolioState>()(
         const missing = ids.filter((id) => !get().coinImages[id])
         if (missing.length > 0) {
           try {
-            const images = await coingecko.fetchImages(missing)
+            const images = await coingecko.fetchImages(missing, apiKey)
             set((s) => ({ coinImages: { ...s.coinImages, ...images } }))
           } catch {
             /* ignore image failures */
@@ -165,7 +172,7 @@ export const usePortfolioStore = create<PortfolioState>()(
       setTimeRange: (selectedTimeRange) => set({ selectedTimeRange }),
 
       fetchHistoricalData: async (forceRefresh = false) => {
-        const { holdings, currency, selectedTimeRange: range } = get()
+        const { holdings, currency, selectedTimeRange: range, apiKey } = get()
         if (holdings.length === 0) { set({ historicalData: [] }); return }
 
         // Claim this invocation's generation. If a newer invocation starts before
@@ -245,7 +252,7 @@ export const usePortfolioStore = create<PortfolioState>()(
           if (i > 0) await sleep(FETCH_SPACING_MS)
           if (superseded()) return
 
-          const result = await fetchCoinHistory(id, range, cur)
+          const result = await fetchCoinHistory(id, range, cur, apiKey)
           if (superseded()) return
           if (result.ok) {
             writeEntry(id, result.points)
@@ -253,7 +260,7 @@ export const usePortfolioStore = create<PortfolioState>()(
             set({ chartLoadingStatus: 'Rate limited — waiting 15s to retry…' })
             await sleep(RATE_LIMIT_WAIT_MS)
             if (superseded()) return
-            const retry = await fetchCoinHistory(id, range, cur)
+            const retry = await fetchCoinHistory(id, range, cur, apiKey)
             if (superseded()) return
             if (retry.ok) {
               writeEntry(id, retry.points)
@@ -279,6 +286,7 @@ export const usePortfolioStore = create<PortfolioState>()(
         currency: s.currency,
         groupMode: s.groupMode,
         sortMode: s.sortMode,
+        apiKey: s.apiKey,
       }),
     },
   ),

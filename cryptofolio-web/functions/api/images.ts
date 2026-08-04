@@ -1,4 +1,4 @@
-import { cacheProxy, parseIds, jsonResponse } from './_lib/cacheProxy'
+import { cacheProxy, parseIds, jsonResponse, coingeckoHeaders, resolveApiKey } from './_lib/cacheProxy'
 
 interface Market { id: string; image: string }
 
@@ -10,11 +10,12 @@ export function imagesTransform(j: unknown): Record<string, string> {
   )
 }
 
-export const onRequestGet: PagesFunction = async (context) => {
+export const onRequestGet: PagesFunction<{ CG_API_KEY?: string }> = async (context) => {
   const url = new URL(context.request.url)
   const ids = parseIds(url.searchParams.get('ids'))
   if (!ids) return jsonResponse({ error: 'missing ids' }, {}, 400)
   const param = ids.join(',')
+  const apiKey = resolveApiKey(context.request.headers.get('x-cg-demo-api-key'), context.env.CG_API_KEY)
   return cacheProxy(
     {
       cacheKeyUrl: `https://cache.local/images?ids=${param}`,
@@ -25,8 +26,7 @@ export const onRequestGet: PagesFunction = async (context) => {
     },
     {
       cache: caches.default,
-      fetchUpstream: (u) =>
-        fetch(u, { headers: { 'User-Agent': 'CryptoFolio/1.0 (+https://cryptofolio.app)', Accept: 'application/json' } }),
+      fetchUpstream: (u) => fetch(u, { headers: coingeckoHeaders(apiKey) }),
       now: () => Date.now(),
       waitUntil: (p) => context.waitUntil(p),
     },

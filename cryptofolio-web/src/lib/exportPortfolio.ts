@@ -7,6 +7,7 @@ export interface PortfolioExport {
   currency: Currency
   holdings: Holding[]
   customExchanges: Exchange[]
+  apiKey?: string // user's CoinGecko key; only present when one is configured
 }
 
 /** Build the serializable export payload (pure — no DOM, easy to test). */
@@ -15,6 +16,7 @@ export function buildPortfolioExport(
   currency: Currency,
   customExchanges: Exchange[] = [],
   now: Date = new Date(),
+  apiKey = '',
 ): PortfolioExport {
   return {
     app: 'CryptoFolio',
@@ -23,6 +25,7 @@ export function buildPortfolioExport(
     currency,
     holdings,
     customExchanges,
+    ...(apiKey ? { apiKey } : {}),
   }
 }
 
@@ -35,6 +38,7 @@ export interface ParsedImport {
   holdings: Holding[]
   currency?: Currency
   customExchanges?: Exchange[]
+  apiKey?: string
 }
 
 function toExchange(raw: unknown, i: number): Exchange {
@@ -87,7 +91,8 @@ export function parsePortfolioImport(text: string): ParsedImport {
   const customExchanges = Array.isArray(obj.customExchanges)
     ? obj.customExchanges.map((raw, i) => toExchange(raw, i))
     : undefined
-  return { holdings, currency, customExchanges }
+  const apiKey = typeof obj.apiKey === 'string' && obj.apiKey.length > 0 ? obj.apiKey : undefined
+  return { holdings, currency, customExchanges, apiKey }
 }
 
 /** Serialize the portfolio and trigger a browser download. */
@@ -95,8 +100,9 @@ export function downloadPortfolioJson(
   holdings: Holding[],
   currency: Currency,
   customExchanges: Exchange[] = [],
+  apiKey = '',
 ): void {
-  const json = JSON.stringify(buildPortfolioExport(holdings, currency, customExchanges), null, 2)
+  const json = JSON.stringify(buildPortfolioExport(holdings, currency, customExchanges, new Date(), apiKey), null, 2)
   const blob = new Blob([json], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
