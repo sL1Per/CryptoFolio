@@ -74,6 +74,12 @@ This connects your GitHub repo so Cloudflare builds and deploys on every push. B
 is a monorepo (the app lives in `cryptofolio-web/`), the **root directory** setting matters.
 
 1. **Dashboard → Workers & Pages → Create → Pages → Connect to Git.**
+   > ⚠️ **Choose the _Pages_ tab, not _Workers_.** CryptoFolio is a static SPA plus
+   > Pages Functions, so it must be a **Pages** project. If you create it as a Worker,
+   > deployments fail in confusing ways — the Worker build runner has no Pages deploy
+   > step, its managed credentials aren't scoped for Pages (`Authentication error [code:
+   > 10000]`), and bolting on a `npx wrangler pages deploy dist` deploy command doesn't
+   > fix it. If you already made a Worker by mistake, delete it and recreate as Pages.
 2. Authorize Cloudflare for GitHub and pick the **`CryptoFolio`** repository.
 3. **Set up builds and deployments:**
    | Field | Value |
@@ -165,6 +171,10 @@ default.
 
 | Symptom | Cause / fix |
 |---|---|
+| Deploy fails: `Missing entry-point to Worker script or to assets directory` (after a warning that `wrangler pages deploy` should be used) | The deploy command is `npx wrangler deploy` (the **Workers** command). This is a **Pages** app. This usually means the project was created as a Worker, not Pages — see the next two rows. Recreating as a native Pages project removes the deploy command entirely. |
+| Deploy fails: `Authentication error [code: 10000]` on `.../pages/projects/...` | The credentials aren't scoped for Pages. Almost always because the project was created as a **Worker** (its managed build token can't edit Pages projects), or a custom `CLOUDFLARE_API_TOKEN` env var lacks the **Account · Cloudflare Pages · Edit** permission. Fix: recreate as a native **Pages** project (no token needed), or scope the token correctly. Being an account super-admin does **not** scope an API token — tokens are scoped independently. |
+| Project was created as a **Worker** instead of Pages (Delete button says "…associated with this **Worker**"; Deployments/Bindings tabs) | Wrong project type for this app. Delete it and recreate via **Create → Pages → Connect to Git** ([Method A](#method-a--cloudflare-dashboard-git-integration)). A native Pages project has no deploy command, auto-publishes `dist/`, and picks up `functions/` for `/api/*`. |
+| Project name in the dashboard (e.g. `cryptofolio`) differs from `wrangler.toml` `name` (`cryptofolio-web`) | `wrangler pages deploy` targets the Pages project named in `wrangler.toml`. Keep them equal: name the Pages project `cryptofolio-web`, or edit `wrangler.toml`. |
 | Build fails immediately: `npm error ... Could not read package.json` / `ENOENT ... /repo/package.json` | **Root directory** isn't set. It must be `cryptofolio-web` (this is a monorepo). Settings → Builds & deployments → Build configuration → Edit → set it → Retry deployment. |
 | Build succeeds but the site is blank / 404 | Check **Build output directory = `dist`** and **Root directory = `cryptofolio-web`** (Method A). |
 | `/api/*` returns 404 | Functions weren't detected — ensure the root directory is `cryptofolio-web` so `functions/` sits directly under it. |
