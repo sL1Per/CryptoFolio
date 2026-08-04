@@ -1,11 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { RefreshCw, ChevronDown, ChevronUp } from 'lucide-react'
 import { usePortfolioStore } from '../../store/portfolioStore'
 import { PortfolioChart } from './PortfolioChart'
 import { ChartStatsBar } from './ChartStatsBar'
+import { ChartSeriesSelector } from './ChartSeriesSelector'
 import { TimeRangePicker } from './TimeRangePicker'
 import { periodChangePct } from './chartHelpers'
 import { asPercentChange } from '../../lib/formatters'
+import { buildTokenOptions } from '../../lib/chartSeries'
+import { buildTokenDataPoints } from '../../lib/portfolioHistory'
+import { chartCacheKey } from '../../lib/cache'
+
+const TOTAL = 'total'
 
 export function PortfolioHistorySection() {
   const holdings = usePortfolioStore((s) => s.holdings)
@@ -16,17 +22,48 @@ export function PortfolioHistorySection() {
   const status = usePortfolioStore((s) => s.chartLoadingStatus)
   const error = usePortfolioStore((s) => s.chartError)
   const isStale = usePortfolioStore((s) => s.chartIsStale)
+  const prices = usePortfolioStore((s) => s.prices)
+  const chartCache = usePortfolioStore((s) => s.chartCache)
   const setTimeRange = usePortfolioStore((s) => s.setTimeRange)
   const fetchHistoricalData = usePortfolioStore((s) => s.fetchHistoricalData)
 
   const [expanded, setExpanded] = useState(true)
+  const [selected, setSelected] = useState<string>(TOTAL)
   const coinKey = [...new Set(holdings.map((h) => h.coin.id))].sort().join(',')
 
   useEffect(() => {
     if (expanded && coinKey) fetchHistoricalData()
   }, [expanded, coinKey, range, currency, fetchHistoricalData])
 
-  const pct = periodChangePct(data)
+  const amountByCoin = useMemo(() => {
+    const m: Record<string, number> = {}
+    for (const h of holdings) m[h.coin.id] = (m[h.coin.id] ?? 0) + h.amount
+    return m
+  }, [holdings])
+
+  const tokenOptions = useMemo(
+    () => buildTokenOptions(holdings, prices, currency),
+    [holdings, prices, currency],
+  )
+
+  // If the selected token is no longer held, fall back to the aggregate view.
+  useEffect(() => {
+    if (selected !== TOTAL && !tokenOptions.some((t) => t.id === selected)) setSelected(TOTAL)
+  }, [selected, tokenOptions])
+
+  const activeData = useMemo(() => {
+    if (selected === TOTAL) return data
+    const entry = chartCache[chartCacheKey(selected, currency, range)]
+    if (!entry) return []
+    return buildTokenDataPoints(entry.points, amountByCoin[selected] ?? 0)
+  }, [selected, data, chartCache, currency, range, amountByCoin])
+
+  const selectorOptions = [
+    { value: TOTAL, label: 'Total' },
+    ...tokenOptions.map((t) => ({ value: t.id, label: t.symbol.toUpperCase() })),
+  ]
+
+  const pct = periodChangePct(activeData)
   const positive = (pct ?? 0) >= 0
 
   return (
@@ -63,10 +100,15 @@ export function PortfolioHistorySection() {
 
       {expanded && (
         <>
+          {selectorOptions.length > 1 && (
+            <div className="border-t border-border">
+              <ChartSeriesSelector options={selectorOptions} value={selected} onChange={setSelected} />
+            </div>
+          )}
           <div className="relative h-64 border-t border-border">
-            {data.length > 0 ? (
+            {activeData.length > 0 ? (
               <>
-                <PortfolioChart data={data} range={range} currency={currency} />
+                <PortfolioChart data={activeData} range={range} currency={currency} />
                 {isStale && !isLoading && (
                   <div className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full border border-[var(--gold-border)] bg-[var(--gold-card-bg)] px-3 py-1 font-mono text-[10px] text-gold">
                     Showing cached data — tap ↻ to refresh
@@ -87,7 +129,7 @@ export function PortfolioHistorySection() {
             )}
           </div>
           <div className="border-t border-border">
-            <ChartStatsBar data={data} currency={currency} />
+            <ChartStatsBar data={activeData} currency={currency} />
           </div>
           <div className="flex justify-center border-t border-border px-5 py-3">
             <TimeRangePicker value={range} onChange={setTimeRange} />

@@ -1,5 +1,10 @@
 import type { HistoryPoint, PortfolioDataPoint } from '../types'
 
+/** A single coin's history as its contribution to portfolio value (price × amount held). */
+export function buildTokenDataPoints(points: HistoryPoint[], amount: number): PortfolioDataPoint[] {
+  return points.map((p) => ({ date: p.ts, value: p.price * amount }))
+}
+
 export function buildPortfolioDataPoints(
   coinHistories: Record<string, HistoryPoint[]>,
   amountByCoin: Record<string, number>,

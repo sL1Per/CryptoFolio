@@ -39,8 +39,8 @@ describe('PortfolioPage', () => {
       currency: 'usd',
     })
     render(<PortfolioPage />)
-    // tap the holding card (button labelled with the coin symbol/amount)
-    await userEvent.click(screen.getByRole('button', { name: /BTC/i }))
+    // tap the holding card (its label includes the exchange, unlike the chart's bare "BTC" chip)
+    await userEvent.click(screen.getByRole('button', { name: /coinbase/i }))
     expect(screen.getByRole('dialog', { name: /edit holding/i })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /delete/i }))
     expect(usePortfolioStore.getState().holdings).toHaveLength(0)
