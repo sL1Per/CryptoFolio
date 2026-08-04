@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { fetchPrices, fetchImages, RateLimitedError } from './coingecko'
+import { fetchPrices, fetchImages, fetchCoinHistory, RateLimitedError } from './coingecko'
 
 afterEach(() => vi.restoreAllMocks())
 
@@ -29,5 +29,26 @@ describe('coingecko client', () => {
   it('fetchImages returns the map', async () => {
     mockFetch(200, { bitcoin: 'http://img/btc.png' })
     expect(await fetchImages(['bitcoin'])).toEqual({ bitcoin: 'http://img/btc.png' })
+  })
+
+  it('forwards the user API key as x-cg-demo-api-key when set', async () => {
+    const f = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify({ bitcoin: { usd: 1 } }), { status: 200 }))
+    vi.stubGlobal('fetch', f)
+    await fetchPrices(['bitcoin'], 'CG-user123')
+    expect(new Headers(f.mock.calls[0][1]?.headers).get('x-cg-demo-api-key')).toBe('CG-user123')
+  })
+
+  it('omits the key header when no key is configured', async () => {
+    const f = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify({ bitcoin: { usd: 1 } }), { status: 200 }))
+    vi.stubGlobal('fetch', f)
+    await fetchPrices(['bitcoin'])
+    expect(new Headers(f.mock.calls[0][1]?.headers).get('x-cg-demo-api-key')).toBeNull()
+  })
+
+  it('fetchCoinHistory forwards the user API key', async () => {
+    const f = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify({ prices: [] }), { status: 200 }))
+    vi.stubGlobal('fetch', f)
+    await fetchCoinHistory('bitcoin', '7D', 'usd', 'CG-user123')
+    expect(new Headers(f.mock.calls[0][1]?.headers).get('x-cg-demo-api-key')).toBe('CG-user123')
   })
 })

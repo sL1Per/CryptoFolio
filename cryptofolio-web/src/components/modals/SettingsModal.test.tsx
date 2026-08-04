@@ -55,3 +55,31 @@ describe('SettingsModal — delete all config', () => {
     expect(useThemeStore.getState().appearance).toBe('dark')
   })
 })
+
+describe('SettingsModal — API key', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    usePortfolioStore.setState({ apiKey: '', holdings: [] })
+  })
+
+  it('shows the current key from the store', () => {
+    usePortfolioStore.setState({ apiKey: 'CG-existing' })
+    render(<SettingsModal open onClose={() => {}} />)
+    expect(screen.getByLabelText(/API key/i, { selector: 'input' })).toHaveValue('CG-existing')
+  })
+
+  it('writes edits back to the store', async () => {
+    render(<SettingsModal open onClose={() => {}} />)
+    await userEvent.type(screen.getByLabelText(/API key/i, { selector: 'input' }), 'CG-typed')
+    expect(usePortfolioStore.getState().apiKey).toBe('CG-typed')
+  })
+
+  it('masks the key by default and reveals it on toggle', async () => {
+    usePortfolioStore.setState({ apiKey: 'CG-secret' })
+    render(<SettingsModal open onClose={() => {}} />)
+    const input = screen.getByLabelText(/API key/i, { selector: 'input' })
+    expect(input).toHaveAttribute('type', 'password')
+    await userEvent.click(screen.getByRole('button', { name: /show api key/i }))
+    expect(input).toHaveAttribute('type', 'text')
+  })
+})

@@ -20,6 +20,29 @@ export interface ProxyDeps {
 
 const CACHED_AT = 'x-cached-at'
 
+/**
+ * Headers for every CoinGecko upstream request. When a Demo API key is present
+ * the limit tracks the key rather than Cloudflare's shared egress IP, so the key
+ * is what actually stops us sharing the free-tier quota with other CF tenants.
+ */
+export function coingeckoHeaders(apiKey?: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    'User-Agent': 'CryptoFolio/1.0 (+https://cryptofolio.app)',
+    Accept: 'application/json',
+  }
+  if (apiKey) headers['x-cg-demo-api-key'] = apiKey
+  return headers
+}
+
+/**
+ * Resolve which CoinGecko key to use: a per-request key the caller forwarded
+ * (from the user's Settings) takes precedence, falling back to the deployment's
+ * CG_API_KEY env secret, then to no key at all.
+ */
+export function resolveApiKey(fromHeader: string | null, fromEnv?: string): string | undefined {
+  return fromHeader || fromEnv || undefined
+}
+
 export function jsonResponse(body: unknown, headers: Record<string, string> = {}, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
